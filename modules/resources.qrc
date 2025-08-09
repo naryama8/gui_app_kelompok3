@@ -1,5 +1,6 @@
-<!DOCTYPE RCC><RCC version="1.0">
-<qresource>
+<RCC>
+  <qresource prefix="login">
+    <file>images/logodompetq.png</file>
     <file>images/login.png</file>
-</qresource>
+  </qresource>
 </RCC>

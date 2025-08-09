@@ -1,1 +1,2 @@
-print ("Hi")
+import resources_rc
+
