@@ -1,11 +1,11 @@
 import sys
 from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QApplication, QDialog, QMainWindow
+from PyQt5.QtWidgets import QApplication, QMainWindow
 from PyQt5.uic import loadUi
 
 import resources_rc
 
-class Login(QDialog):
+class Login(QMainWindow):
     def __init__(self):
         super(Login,self).__init__()
         loadUi("loginpage.ui",self)
