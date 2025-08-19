@@ -21,7 +21,7 @@
     <item>
      <widget class="QLabel" name="logo">
       <property name="styleSheet">
-       <string notr="true">image: url(:/login/images/logodompetq.png);</string>
+       <string notr="true">image: url(:/login/images/logodompetq.png)</string>
       </property>
       <property name="text">
        <string/>
@@ -33,9 +33,10 @@
       <property name="styleSheet">
        <string notr="true">background-color: rgb(67, 55, 113);
 color: rgb(127, 118, 164);
-font-size: 20px;
+font-size: 15px;
 border: 1px solid black;
-border-radius: 5px;</string>
+border-radius: 10px;
+padding: 5px</string>
       </property>
       <property name="placeholderText">
        <string>Username</string>
@@ -63,9 +64,10 @@ border-radius: 5px;</string>
       <property name="styleSheet">
        <string notr="true">background-color: rgb(67, 55, 113);
 color: rgb(127, 118, 164);
-font-size: 20px;
+font-size: 15px;
 border: 1px solid black;
-border-radius: 5px;</string>
+border-radius: 10px;
+padding: 5px</string>
       </property>
       <property name="placeholderText">
        <string>Password</string>
