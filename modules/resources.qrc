@@ -2,5 +2,8 @@
   <qresource prefix="login">
     <file>images/logodompetq.png</file>
     <file>images/login.png</file>
+    <file>images/DompetQ.png</file>
+    <file>images/Welcomeback_login.png</file>
+    <file>images/logonnama.png</file>
   </qresource>
 </RCC>
