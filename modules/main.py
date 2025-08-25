@@ -180,12 +180,14 @@ if __name__ == "__main__":
 
     # === Animated Gradient START ===
     widget._bg_step = 0
-    widget._bg_timer = QTimer(widget)        # simpan sebagai atribut supaya tidak ter-garbage-collect
+    widget._bg_timer = QTimer(widget)        
     widget._bg_timer.timeout.connect(lambda: (
         setattr(widget, "_bg_step", widget._bg_step + 1),
         widget.setStyleSheet(build_gradient_css(widget._bg_step))
     ))
-    widget._bg_timer.start(30)  # 30ms ~ 33fps; bisa 16ms untuk lebih halus
-    # === Animated Gradient END ===
+    widget._bg_timer.start(30)  
+    
 
     sys.exit(app.exec_())
+
+#Ini kode udah selesai yan bener buat halaman login sama signup, jangan diapa2in!
