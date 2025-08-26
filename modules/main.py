@@ -27,6 +27,9 @@ def saveacc(accounts):
     with open("accounts.json", "w") as f:
         json.dump(accounts, f, indent=4)
 
+#variabel active user
+activeuser = None
+
 #fungsi penghubung ke fungsi trend
 def trendfunc(x):
    return x**2 #masih dummy
@@ -107,6 +110,8 @@ class Login(QMainWindow):
 
         if username in accounts and accounts[username]==password:
            print("Successfully Logged in!")
+           global activeuser
+           activeuser=username
            self.loginButton.clicked.connect(self.gotodashboard)
            
 
@@ -175,6 +180,8 @@ class Signup(QMainWindow):
          accounts[username]=password
          saveacc(accounts)
          print("Successfully Signed Up!")
+         global activeuser
+         activeuser=username
          self.wannasignup.clicked.connect(self.gotodashboard)
 
 
@@ -241,7 +248,7 @@ class Dashboard(QMainWindow):
         self.targetsavings.setMinimum(0)
 
         #untuk piechart outcome
-        
+
 
 
     def switchacc(self):
