@@ -1,12 +1,17 @@
 import sys
-from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QApplication, QMainWindow
+import numpy as np
+from PyQt5 import QtWidgets, QtCore
+from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget
 from PyQt5.uic import loadUi
 from PyQt5.QtWidgets import QToolTip
+from PyQt5.QtGui import QFont
 import json
 import os
 from PyQt5 import QtCore
 from PyQt5.QtCore import QTimer  
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+
 
 import resources_rc
 
@@ -21,6 +26,10 @@ def loadacc():
 def saveacc(accounts):
     with open("accounts.json", "w") as f:
         json.dump(accounts, f, indent=4)
+
+#fungsi penghubung ke fungsi trend
+def trendfunc(x):
+   return x**2 #masih dummy
 
 #functions buat animated background
 def _mix(a, b, t):
@@ -98,7 +107,8 @@ class Login(QMainWindow):
 
         if username in accounts and accounts[username]==password:
            print("Successfully Logged in!")
-           QToolTip.showText(self.name.mapToGlobal(self.name.rect().bottomLeft()), "Successfully Logged in!")
+           self.loginButton.clicked.connect(self.gotodashboard)
+           
 
         elif username in accounts and accounts[username]!=password:
            print("Invalid Password!")
@@ -110,6 +120,10 @@ class Login(QMainWindow):
 
     def createaccount(self): #mau sign up di halaman login
         widget.setCurrentIndex(1) #ini buat pindah halaman ke halaman 1(sign up page)
+
+    def gotodashboard(self):
+        widget.setCurrentIndex(2)
+
 
 class Signup(QMainWindow):
     def __init__(self):
@@ -161,12 +175,77 @@ class Signup(QMainWindow):
          accounts[username]=password
          saveacc(accounts)
          print("Successfully Signed Up!")
-         QToolTip.showText(self.confirmpass.mapToGlobal(self.confirmpass.rect().bottomLeft()), "Successfully Signed Up!")
+         self.wannasignup.clicked.connect(self.gotodashboard)
 
 
     def backtologin(self):
         widget.setCurrentIndex(0)
 
+    def gotodashboard(self):
+        widget.setCurrentIndex(2)
+
+class Dashboard(QMainWindow):
+    def __init__(self):
+        super(Dashboard,self).__init__()
+        loadUi("ui_files/dashboard.ui", self)
+        # bikin central widget transparan supaya background di belakangnya kelihatan
+        self.centralWidget().setAttribute(QtCore.Qt.WA_StyledBackground, True)
+        self.centralWidget().setStyleSheet("background: transparent;")
+        self.username.clicked.connect(self.switchacc)
+
+        #untuk label saldo: saldonum
+        saldo = 150000
+        layout = QtWidgets.QVBoxLayout(self.saldonum)  
+        label = QtWidgets.QLabel(f"Rp {saldo:,}")  
+        label.setAlignment(QtCore.Qt.AlignCenter)
+        label.setStyleSheet("font-size: 80px; font-weight: bold;")
+        layout.addWidget(label)
+        self.saldonum.setLayout(layout)
+
+
+        #untuk monthly usage progress bar
+        outcome=120000  #perlu diganti fungsi outcome
+        monthlyusage = outcome/saldo * 100
+
+        self.monthlyusagebar.setValue(int(monthlyusage))
+        self.monthlyusagebar.setMaximum(100)
+        self.monthlyusagebar.setMinimum(0)
+
+        #untuk grafik trend outcome
+        
+        layout = QVBoxLayout(self.trendchart)
+
+        x = np.arange(1,6)
+        y = [trendfunc(i) for i in x]
+
+        self.figure = Figure()
+        self.canvas = FigureCanvas(self.figure)
+        layout.addWidget(self.canvas)
+
+        ax = self.figure.add_subplot(111)
+        ax.bar(x, y, color="#7b6fcc")
+        ax.set_title("Your Outcome Trend")
+        ax.set_xlabel("x")
+        ax.set_ylabel("f(x)")
+
+
+        self.canvas.draw()
+
+        #untuk monthly target progress bar
+        forsavings=100000  #perlu diganti fungsi for savings
+        target_savings=120000
+        progresssavings = forsavings/target_savings * 100
+
+        self.targetsavings.setValue(int(progresssavings))
+        self.targetsavings.setMaximum(100)
+        self.targetsavings.setMinimum(0)
+
+        #untuk piechart outcome
+        
+
+
+    def switchacc(self):
+        widget.setCurrentIndex(0)
 
 
 if __name__ == "__main__":
@@ -176,6 +255,8 @@ if __name__ == "__main__":
     widget.addWidget(ui)
     createacc=Signup()
     widget.addWidget(createacc)
+    dashboard=Dashboard()
+    widget.addWidget(dashboard)
     widget.showMaximized()
 
     # === Animated Gradient START ===
