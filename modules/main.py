@@ -7,10 +7,12 @@ from PyQt5.QtWidgets import QToolTip
 from PyQt5.QtGui import QFont
 import json
 import os
+import subprocess
 from PyQt5 import QtCore
 from PyQt5.QtCore import QTimer  
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+from validtransaction import Trx,knowuser
 
 
 import resources_rc
@@ -129,7 +131,6 @@ class Login(QMainWindow):
     def gotodashboard(self):
         widget.setCurrentIndex(2)
 
-
 class Signup(QMainWindow):
     def __init__(self):
         super(Signup,self).__init__()
@@ -191,6 +192,7 @@ class Signup(QMainWindow):
     def gotodashboard(self):
         widget.setCurrentIndex(2)
 
+
 class Dashboard(QMainWindow):
     def __init__(self):
         super(Dashboard,self).__init__()
@@ -198,7 +200,8 @@ class Dashboard(QMainWindow):
         # bikin central widget transparan supaya background di belakangnya kelihatan
         self.centralWidget().setAttribute(QtCore.Qt.WA_StyledBackground, True)
         self.centralWidget().setStyleSheet("background: transparent;")
-        self.username.clicked.connect(self.switchacc)
+        self.usernamecik.clicked.connect(self.switchacc)
+        self.addtransaction.clicked.connect(self.inputtransaction)
 
         #untuk label saldo: saldonum
         saldo = 150000
@@ -253,6 +256,19 @@ class Dashboard(QMainWindow):
 
     def switchacc(self):
         widget.setCurrentIndex(0)
+
+    def inputtransaction(self):
+        """Fungsi untuk membuka window Trx"""
+        # Pastikan activeuser sudah diset
+        if activeuser:
+            currentuser = knowuser(activeuser)
+            # Buat instance Trx dan kirim activeuser sebagai parameter
+            self.trx_window = Trx(activeuser)
+            self.trx_window.show()
+        else:
+            print("Error: Tidak ada user yang aktif")
+            QtWidgets.QMessageBox.warning(self, "Error", "Silakan login terlebih dahulu")
+
 
 
 if __name__ == "__main__":
