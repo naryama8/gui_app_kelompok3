@@ -1,10 +1,11 @@
 import sys
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget
+from PyQt5.QtGui import QRegExpValidator
 from PyQt5.uic import loadUi
 from PyQt5.QtWidgets import QToolTip
 from PyQt5 import QtCore
-from PyQt5.QtCore import QTimer
+from PyQt5.QtCore import QTimer, QRegExp
 
 class Kalku(QMainWindow):
     def __init__(self, widget):
@@ -13,6 +14,10 @@ class Kalku(QMainWindow):
         self.widget = widget
         self.calculateButton.clicked.connect(self.calculate)
         self.backButton.clicked.connect(self.backtoDashboard)
+        self.harga_barang.setValidator(QRegExpValidator(QRegExp("[0-9]*")))
+        self.from_savings.setValidator(QRegExpValidator(QRegExp("[0-9]*")))
+        self.target_perbulan.setValidator(QRegExpValidator(QRegExp("[0-9]*")))
+
 
     def check_result(self):
         price = self.harga_barang.text()

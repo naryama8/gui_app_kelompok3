@@ -30,7 +30,7 @@
        </size>
       </property>
       <layout class="QGridLayout" name="gridLayout_2">
-       <item row="0" column="0">
+       <item row="0" column="1">
         <widget class="QFrame" name="frame">
          <property name="minimumSize">
           <size>
@@ -41,7 +41,7 @@
          <property name="maximumSize">
           <size>
            <width>700</width>
-           <height>700</height>
+           <height>705</height>
           </size>
          </property>
          <property name="styleSheet">
@@ -57,6 +57,12 @@ border-radius: 10px;</string>
          <layout class="QVBoxLayout" name="verticalLayout_3">
           <item>
            <widget class="QLabel" name="label">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>50</height>
+             </size>
+            </property>
             <property name="maximumSize">
              <size>
               <width>16777215</width>
@@ -66,7 +72,7 @@ border-radius: 10px;</string>
             <property name="font">
              <font>
               <family>Open Sans</family>
-              <pointsize>18</pointsize>
+              <pointsize>20</pointsize>
               <weight>75</weight>
               <bold>true</bold>
              </font>
@@ -83,8 +89,79 @@ border-radius: 10px;</string>
              <number>5</number>
             </property>
             <property name="indent">
-             <number>5</number>
+             <number>15</number>
             </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QFrame" name="">
+            <property name="styleSheet">
+             <string notr="true">background-color: #6656be;</string>
+            </property>
+            <layout class="QHBoxLayout" name="horizontalLayout_4">
+             <item>
+              <widget class="QLabel" name="label_8">
+               <property name="maximumSize">
+                <size>
+                 <width>16777215</width>
+                 <height>50</height>
+                </size>
+               </property>
+               <property name="font">
+                <font>
+                 <family>Open Sans</family>
+                 <pointsize>15</pointsize>
+                 <weight>75</weight>
+                 <bold>true</bold>
+                </font>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">color: #dddbe9;</string>
+               </property>
+               <property name="text">
+                <string>Nama Barang:</string>
+               </property>
+               <property name="margin">
+                <number>5</number>
+               </property>
+               <property name="indent">
+                <number>5</number>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="nama_barang">
+               <property name="minimumSize">
+                <size>
+                 <width>200</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>200</width>
+                 <height>23</height>
+                </size>
+               </property>
+               <property name="font">
+                <font>
+                 <family>Open Sans</family>
+                 <pointsize>15</pointsize>
+                 <weight>75</weight>
+                 <bold>true</bold>
+                </font>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">background-color: #433771;
+text-indent: 50px;
+color: #dddbe9;</string>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </widget>
           </item>
           <item>
@@ -126,6 +203,9 @@ border-radius: 10px;</string>
                  </property>
                  <property name="text">
                   <string>Harga Barang:</string>
+                 </property>
+                 <property name="indent">
+                  <number>5</number>
                  </property>
                 </widget>
                </item>
@@ -223,6 +303,9 @@ color: #dddbe9;</string>
                  </property>
                  <property name="text">
                   <string>Jumlah Saldo yang Ingin Dipakai:</string>
+                 </property>
+                 <property name="indent">
+                  <number>5</number>
                  </property>
                 </widget>
                </item>
@@ -327,6 +410,9 @@ color: #dddbe9;</string>
                  <property name="text">
                   <string>Target Menabung Per Bulan:</string>
                  </property>
+                 <property name="indent">
+                  <number>5</number>
+                 </property>
                 </widget>
                </item>
                <item>
@@ -413,6 +499,9 @@ color: #dddbe9;</string>
                  <property name="readOnly">
                   <bool>false</bool>
                  </property>
+                 <property name="placeholderText">
+                  <string/>
+                 </property>
                 </widget>
                </item>
               </layout>
@@ -467,6 +556,9 @@ color: #dddbe9;</string>
                <property name="text">
                 <string/>
                </property>
+               <property name="indent">
+                <number>5</number>
+               </property>
               </widget>
              </item>
              <item>
@@ -485,6 +577,9 @@ color: #dddbe9;</string>
                <property name="text">
                 <string/>
                </property>
+               <property name="indent">
+                <number>5</number>
+               </property>
               </widget>
              </item>
              <item>
@@ -502,6 +597,9 @@ color: #dddbe9;</string>
                </property>
                <property name="text">
                 <string/>
+               </property>
+               <property name="indent">
+                <number>5</number>
                </property>
               </widget>
              </item>
@@ -540,29 +638,58 @@ color: #dddbe9;</string>
            </spacer>
           </item>
           <item>
-           <widget class="QPushButton" name="backButton">
-            <property name="font">
-             <font>
-              <family>Open Sans</family>
-              <pointsize>18</pointsize>
-              <weight>75</weight>
-              <italic>false</italic>
-              <bold>true</bold>
-             </font>
-            </property>
-            <property name="cursor">
-             <cursorShape>PointingHandCursor</cursorShape>
-            </property>
-            <property name="styleSheet">
-             <string notr="true">font: 18pt &quot;Open Sans&quot;;
+           <layout class="QHBoxLayout" name="horizontalLayout_5">
+            <item>
+             <widget class="QPushButton" name="backButton">
+              <property name="font">
+               <font>
+                <family>Open Sans</family>
+                <pointsize>18</pointsize>
+                <weight>75</weight>
+                <italic>false</italic>
+                <bold>true</bold>
+               </font>
+              </property>
+              <property name="cursor">
+               <cursorShape>PointingHandCursor</cursorShape>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">font: 18pt &quot;Open Sans&quot;;
 font-weight: bold;
 background-color: #6656be;
 color: #dddbe9;</string>
-            </property>
-            <property name="text">
-             <string>Back</string>
-            </property>
-           </widget>
+              </property>
+              <property name="text">
+               <string>Back</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="saveButton">
+              <property name="font">
+               <font>
+                <family>Open Sans</family>
+                <pointsize>18</pointsize>
+                <weight>75</weight>
+                <italic>false</italic>
+                <bold>true</bold>
+               </font>
+              </property>
+              <property name="cursor">
+               <cursorShape>PointingHandCursor</cursorShape>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">font: 18pt &quot;Open Sans&quot;;
+font-weight: bold;
+background-color: #6656be;
+color: #dddbe9;</string>
+              </property>
+              <property name="text">
+               <string>Simpan</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </item>
          </layout>
         </widget>
