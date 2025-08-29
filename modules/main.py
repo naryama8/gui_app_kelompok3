@@ -14,8 +14,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from validtransaction import Trx,knowuser
 from showtransaction import Listtrx
-
-
+from calc_window import Kalku
 
 import resources_rc
 
@@ -205,6 +204,7 @@ class Dashboard(QMainWindow):
         self.usernamecik.clicked.connect(self.switchacc)
         self.addtransaction.clicked.connect(self.inputtransaction)
         self.mytrx.clicked.connect(self.listtransaction)
+        self.kalkutarget.clicked.connect(self.kalkuWindow)
 
         #untuk label saldo: saldonum
         saldo = 150000
@@ -285,6 +285,12 @@ class Dashboard(QMainWindow):
             QtWidgets.QMessageBox.warning(self, "Error", "Silakan login terlebih dahulu")
 
 
+    # bikinan naryama
+    def kalkuWindow(self):
+        print("Kalku Window")
+        widget.setCurrentIndex(3)
+
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
@@ -295,6 +301,8 @@ if __name__ == "__main__":
     widget.addWidget(createacc)
     dashboard=Dashboard()
     widget.addWidget(dashboard)
+    kalku=Kalku(widget)
+    widget.addWidget(kalku)
     widget.showMaximized()
 
     # === Animated Gradient START ===
