@@ -13,6 +13,8 @@ from PyQt5.QtCore import QTimer
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from validtransaction import Trx,knowuser
+from showtransaction import Listtrx
+
 
 
 import resources_rc
@@ -202,6 +204,7 @@ class Dashboard(QMainWindow):
         self.centralWidget().setStyleSheet("background: transparent;")
         self.usernamecik.clicked.connect(self.switchacc)
         self.addtransaction.clicked.connect(self.inputtransaction)
+        self.mytrx.clicked.connect(self.listtransaction)
 
         #untuk label saldo: saldonum
         saldo = 150000
@@ -265,6 +268,18 @@ class Dashboard(QMainWindow):
             # Buat instance Trx dan kirim activeuser sebagai parameter
             self.trx_window = Trx(activeuser)
             self.trx_window.show()
+        else:
+            print("Error: Tidak ada user yang aktif")
+            QtWidgets.QMessageBox.warning(self, "Error", "Silakan login terlebih dahulu")
+
+    def listtransaction(self):
+        """Fungsi untuk membuka window Trx"""
+        # Pastikan activeuser sudah diset
+        if activeuser:
+            currentuser = knowuser(activeuser)
+            # Buat instance Trx dan kirim activeuser sebagai parameter
+            self.listtrx_window = Listtrx(activeuser)
+            self.listtrx_window.show()
         else:
             print("Error: Tidak ada user yang aktif")
             QtWidgets.QMessageBox.warning(self, "Error", "Silakan login terlebih dahulu")
