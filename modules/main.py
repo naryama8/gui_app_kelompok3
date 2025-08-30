@@ -300,25 +300,16 @@ class Dashboard(QMainWindow):
 
     def setup_pie_chart(self):
         """Setup pie chart untuk outcome categories"""
-        # Pastikan ada widget bernama 'piechart' di UI file
-        # Jika tidak ada, ganti dengan nama widget yang sesuai
         if not hasattr(self, 'piechart'):
             print("Widget 'piechart' tidak ditemukan. Pastikan nama widget sesuai dengan UI file.")
             return
-            
-        # Hapus layout lama jika ada
         if self.piechart.layout():
             QtWidgets.QWidget().setLayout(self.piechart.layout())
-        
-        # Buat layout baru
+            
         layout = QVBoxLayout(self.piechart)
         layout.setContentsMargins(5, 5, 5, 5)
-        
-        # Buat figure dan canvas
         self.pie_figure = Figure(figsize=(4, 3), facecolor='#aaaaff')
         self.pie_canvas = FigureCanvas(self.pie_figure)
-        
-        # Tambahkan canvas ke layout
         layout.addWidget(self.pie_canvas)
 
     def update_pie_chart(self, transactions):
@@ -461,5 +452,6 @@ if __name__ == "__main__":
     
 
     sys.exit(app.exec_())
+
 
 #Ini kode udah selesai yan bener buat halaman login sama signup, jangan diapa2in!
