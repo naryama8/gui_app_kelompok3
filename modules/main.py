@@ -16,6 +16,9 @@ from validtransaction import Trx,knowuser
 from showtransaction import Listtrx
 from calc_window import Kalku
 from transaction import TransactionApp
+import sqlite3
+from collections import defaultdict
+from datetime import datetime
 
 import resources_rc
 
@@ -206,6 +209,9 @@ class Dashboard(QMainWindow):
         self.addtransaction.clicked.connect(self.transaction)
         self.kalkutarget.clicked.connect(self.kalkuWindow)
 
+        # Setup database untuk mengambil data transaksi
+        self.init_database()
+
         #untuk label saldo: saldonum
         saldo = 150000
         layout = QtWidgets.QVBoxLayout(self.saldonum)  
@@ -253,9 +259,147 @@ class Dashboard(QMainWindow):
         self.targetsavings.setMaximum(100)
         self.targetsavings.setMinimum(0)
 
-        #untuk piechart outcome
+        # Setup pie chart untuk outcome
+        self.setup_pie_chart()
+        
+        # Load dan tampilkan data
+        self.load_and_display_data()
 
+    def init_database(self):
+        """Initialize database connection"""
+        try:
+            self.conn = sqlite3.connect('transactions.db')
+            self.cursor = self.conn.cursor()
+        except Exception as e:
+            print(f"Database connection error: {e}")
+            self.conn = None
+            self.cursor = None
 
+    def load_user_transactions(self):
+        """Load transaksi untuk user yang aktif"""
+        if not self.conn or not activeuser:
+            return []
+            
+        try:
+            self.cursor.execute("SELECT date, amount, type, description FROM transactions WHERE username = ? ORDER BY date DESC", (activeuser,))
+            rows = self.cursor.fetchall()
+            
+            transactions = []
+            for row in rows:
+                transactions.append({
+                    "date": row[0],
+                    "amount": row[1],
+                    "type": row[2],
+                    "description": row[3]
+                })
+            
+            return transactions
+        except Exception as e:
+            print(f"Error loading transactions: {e}")
+            return []
+
+    def setup_pie_chart(self):
+        """Setup pie chart untuk outcome categories"""
+        # Pastikan ada widget bernama 'piechart' di UI file
+        # Jika tidak ada, ganti dengan nama widget yang sesuai
+        if not hasattr(self, 'piechart'):
+            print("Widget 'piechart' tidak ditemukan. Pastikan nama widget sesuai dengan UI file.")
+            return
+            
+        # Hapus layout lama jika ada
+        if self.piechart.layout():
+            QtWidgets.QWidget().setLayout(self.piechart.layout())
+        
+        # Buat layout baru
+        layout = QVBoxLayout(self.piechart)
+        layout.setContentsMargins(5, 5, 5, 5)
+        
+        # Buat figure dan canvas
+        self.pie_figure = Figure(figsize=(4, 3), facecolor='#aaaaff')
+        self.pie_canvas = FigureCanvas(self.pie_figure)
+        
+        # Tambahkan canvas ke layout
+        layout.addWidget(self.pie_canvas)
+
+    def update_pie_chart(self, transactions):
+        """Update pie chart dengan data transaksi real"""
+        if not hasattr(self, 'pie_figure'):
+            return
+            
+        self.pie_figure.clear()
+        
+        if not transactions:
+            # Tampilkan pesan jika tidak ada data
+            ax = self.pie_figure.add_subplot(111)
+            ax.text(0.5, 0.5, 'No Expense Data\nStart adding transactions!', 
+                   horizontalalignment='center', verticalalignment='center',
+                   transform=ax.transAxes, fontsize=10, color='white')
+            ax.set_facecolor('#aaaaff')
+            self.pie_canvas.draw()
+            return
+        
+        # Kelompokkan pengeluaran berdasarkan kategori
+        expense_categories = defaultdict(float)
+        
+        for trans in transactions:
+            if trans["amount"] < 0:
+                desc = trans["description"].lower()
+                category = self.categorize_expense(desc)
+                expense_categories[category] += abs(trans["amount"])
+        
+        if not expense_categories:
+            # Tidak ada pengeluaran
+            ax = self.pie_figure.add_subplot(111)
+            ax.text(0.5, 0.5, 'No Expense Data', 
+                   horizontalalignment='center', verticalalignment='center',
+                   transform=ax.transAxes, fontsize=10, color='white')
+            ax.set_facecolor('#aaaaff')
+            self.pie_canvas.draw()
+            return
+        
+        labels = list(expense_categories.keys())
+        sizes = list(expense_categories.values())
+        colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd', '#98d8c8', '#f7dc6f']
+        ax = self.pie_figure.add_subplot(111)
+        ax.set_facecolor('#aaaaff')
+        
+        wedges, texts, autotexts = ax.pie(sizes, labels=labels, colors=colors[:len(labels)], 
+                                        autopct='%1.1f%%', startangle=90, textprops={'fontsize': 8, 'color': 'white'})
+    
+        ax.set_title('Expense Categories', fontsize=10, color='white', pad=10)
+        self.pie_figure.tight_layout()
+        self.pie_canvas.draw()
+
+    def categorize_expense(self, description):
+        """Kategorikan pengeluaran berdasarkan description"""
+        desc_lower = description.lower()
+        
+        # Mapping keywords ke kategori
+        categories = {
+            'food': ['makan', 'food', 'resto', 'restaurant', 'snack', 'groceries', 'grocery'],
+            'transport': ['bensin', 'transport', 'fuel', 'gas', 'motor', 'car', 'taxi', 'bus'],
+            'shopping': ['belanja', 'shopping', 'online', 'shop', 'beli', 'buy'],
+            'housing': ['kost', 'rent', 'sewa', 'listrik', 'air', 'utility'],
+            'entertainment': ['hiburan', 'movie', 'game', 'entertainment', 'nonton'],
+            'health': ['obat', 'doctor', 'hospital', 'health', 'medical'],
+            'education': ['buku', 'course', 'training', 'education', 'school'],
+        }
+        
+        # Cek setiap kategori
+        for category, keywords in categories.items():
+            if any(keyword in desc_lower for keyword in keywords):
+                return category.title()
+        
+        # Default kategori jika tidak cocok
+        return 'Others'
+
+    def load_and_display_data(self):
+        """Load dan display data untuk pie chart"""
+        # Load transaksi user
+        transactions = self.load_user_transactions()
+        
+        # Update pie chart untuk outcome categories
+        self.update_pie_chart(transactions)
 
     def switchacc(self):
         widget.setCurrentIndex(0)
@@ -278,6 +422,18 @@ class Dashboard(QMainWindow):
     def kalkuWindow(self):
         print("Kalku Window")
         widget.setCurrentIndex(3)
+
+    def showEvent(self, event):
+        """Override showEvent untuk refresh data ketika dashboard ditampilkan"""
+        super().showEvent(event)
+        # Refresh data setiap kali dashboard ditampilkan
+        self.load_and_display_data()
+
+    def closeEvent(self, event):
+        """Override close event untuk menutup koneksi database"""
+        if hasattr(self, 'conn') and self.conn:
+            self.conn.close()
+        event.accept()
 
 
 
