@@ -15,6 +15,7 @@ from matplotlib.figure import Figure
 from validtransaction import Trx,knowuser
 from showtransaction import Listtrx
 from calc_window import Kalku
+from transaction import TransactionApp
 
 import resources_rc
 
@@ -202,8 +203,7 @@ class Dashboard(QMainWindow):
         self.centralWidget().setAttribute(QtCore.Qt.WA_StyledBackground, True)
         self.centralWidget().setStyleSheet("background: transparent;")
         self.usernamecik.clicked.connect(self.switchacc)
-        self.addtransaction.clicked.connect(self.inputtransaction)
-        self.mytrx.clicked.connect(self.listtransaction)
+        self.addtransaction.clicked.connect(self.transaction)
         self.kalkutarget.clicked.connect(self.kalkuWindow)
 
         #untuk label saldo: saldonum
@@ -260,26 +260,15 @@ class Dashboard(QMainWindow):
     def switchacc(self):
         widget.setCurrentIndex(0)
 
-    def inputtransaction(self):
-        """Fungsi untuk membuka window Trx"""
-        # Pastikan activeuser sudah diset
-        if activeuser:
-            currentuser = knowuser(activeuser)
-            # Buat instance Trx dan kirim activeuser sebagai parameter
-            self.trx_window = Trx(activeuser)
-            self.trx_window.show()
-        else:
-            print("Error: Tidak ada user yang aktif")
-            QtWidgets.QMessageBox.warning(self, "Error", "Silakan login terlebih dahulu")
 
-    def listtransaction(self):
+    def transaction(self):
         """Fungsi untuk membuka window Trx"""
         # Pastikan activeuser sudah diset
         if activeuser:
             currentuser = knowuser(activeuser)
-            # Buat instance Trx dan kirim activeuser sebagai parameter
-            self.listtrx_window = Listtrx(activeuser)
-            self.listtrx_window.show()
+            # Buat instance TransactionApp dan kirim activeuser sebagai parameter
+            self.transaction_window = TransactionApp(activeuser)
+            self.transaction_window.show()
         else:
             print("Error: Tidak ada user yang aktif")
             QtWidgets.QMessageBox.warning(self, "Error", "Silakan login terlebih dahulu")

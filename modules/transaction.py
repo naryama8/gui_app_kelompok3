@@ -17,12 +17,14 @@ try:
 except ImportError:
     print("Warning: Resource file rsc_rc not found. Background images may not load.")
 
+
 class TransactionApp(QMainWindow):
-    def __init__(self):
+    def __init__(self, activeuser):
         super().__init__()
-        
+        self.username=activeuser
+        dialog = AddTransactionDialog(self.username) 
         try:
-            uic.loadUi('transaction.ui', self)
+            uic.loadUi('ui_files/transaction.ui', self)
         except FileNotFoundError:
             QMessageBox.critical(None, "Error", "File transaction.ui tidak ditemukan!")
             sys.exit(1)
@@ -53,6 +55,7 @@ class TransactionApp(QMainWindow):
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS transactions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL,
                 date TEXT NOT NULL,
                 amount REAL NOT NULL,
                 type TEXT NOT NULL,
@@ -63,16 +66,17 @@ class TransactionApp(QMainWindow):
 
     def load_transactions(self):
         """Load semua transaksi dari database"""
-        self.cursor.execute("SELECT date, amount, type, description FROM transactions ORDER BY date DESC")
+        self.cursor.execute("SELECT username, date, amount, type, description FROM transactions ORDER BY date DESC")
         rows = self.cursor.fetchall()
         
         transactions = []
         for row in rows:
             transactions.append({
-                "date": row[0],
-                "amount": row[1],
-                "type": row[2],
-                "description": row[3]
+                "username": row[0],
+                "date": row[1],
+                "amount": row[2],
+                "type": row[3],
+                "description": row[4]
             })
         
         return transactions
@@ -80,8 +84,8 @@ class TransactionApp(QMainWindow):
     def save_transaction(self, transaction):
         """Simpan transaksi baru ke database"""
         self.cursor.execute(
-            "INSERT INTO transactions (date, amount, type, description) VALUES (?, ?, ?, ?)",
-            (transaction["date"], transaction["amount"], transaction["type"], transaction["description"])
+            "INSERT INTO transactions (username, date, amount, type, description) VALUES (?, ?, ?, ?, ?)",
+            (transaction["username"], transaction["date"], transaction["amount"], transaction["type"], transaction["description"])
         )
         self.conn.commit()
         
@@ -97,8 +101,8 @@ class TransactionApp(QMainWindow):
             
             # Hapus dari database (dengan LIMIT untuk keamanan)
             self.cursor.execute(
-                "DELETE FROM transactions WHERE date = ? AND amount = ? AND type = ? AND description = ? LIMIT 1",
-                (transaction["date"], transaction["amount"], transaction["type"], transaction["description"])
+                "DELETE FROM transactions WHERE username=? AND date = ? AND amount = ? AND type = ? AND description = ? LIMIT 1",
+                (transaction["username"], transaction["date"], transaction["amount"], transaction["type"], transaction["description"])
             )
             self.conn.commit()
             
@@ -405,8 +409,9 @@ class TransactionApp(QMainWindow):
         event.accept()
 
 class AddTransactionDialog(QtWidgets.QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    def __init__(self, username):
+        super().__init__()
+        self.username = username
         self.setWindowTitle("Add New Transaction")
         self.setModal(True)
         self.setFixedSize(350, 280)
@@ -492,6 +497,7 @@ class AddTransactionDialog(QtWidgets.QDialog):
                 amount = -amount
             
             return {
+                "username" : self.username,
                 "date": self.date_edit.date().toString("yyyy-MM-dd"),
                 "amount": amount,
                 "type": self.type_combo.currentText(),
@@ -504,7 +510,7 @@ class AddTransactionDialog(QtWidgets.QDialog):
 def main():
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
-    window = TransactionApp()
+    window = TransactionApp(activeuser)
     window.show()
     
     sys.exit(app.exec_())
