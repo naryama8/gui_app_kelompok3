@@ -422,6 +422,13 @@ class TransactionApp(QMainWindow):
         
         if hasattr(self, 'trend_canvas'):
             self.trend_canvas.draw()
+
+    def get_balance(self):
+        amounts = np.array([t["amount"] for t in self.transactions])
+        total_income = np.sum(amounts[amounts > 0])
+        total_expense = abs(np.sum(amounts[amounts < 0]))
+        balance = total_income - total_expense
+        return balance
     
     def closeEvent(self, event):
         """Override close event untuk menutup koneksi database"""

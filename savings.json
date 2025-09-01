@@ -6,5 +6,9 @@
     "andi": {
         "target": 300000.0,
         "savings": 100000.0
+    },
+    "testing": {
+        "target": 10000.0,
+        "savings": 0.0
     }
 }

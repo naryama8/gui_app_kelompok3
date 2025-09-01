@@ -134,7 +134,9 @@ class Login(QMainWindow):
     def gotodashboard(self):
         widget.setCurrentIndex(2)
         # data masing masing user setelah login
+        dashboard.saldo = TransactionApp(activeuser).get_balance()
         dashboard.load_user_data(activeuser)
+        dashboard.load_balance()
         dashboard.trendfunc()
 
 class Signup(QMainWindow):
@@ -180,13 +182,17 @@ class Signup(QMainWindow):
     def gotodashboard(self):
         widget.setCurrentIndex(2)
         # data tabungan masing masing user setelah login
+        dashboard.saldo = TransactionApp(activeuser).get_balance()
         dashboard.load_user_data(activeuser)
+        dashboard.load_balance()
         dashboard.trendfunc()
+
 
 class Dashboard(QMainWindow):
     def __init__(self):
         super(Dashboard, self).__init__()
         loadUi("ui_files/dashboard.ui", self)
+        self.saldo = 1
         self.centralWidget().setAttribute(QtCore.Qt.WA_StyledBackground, True)
         self.centralWidget().setStyleSheet("background: transparent;")
         self.usernamecik.clicked.connect(self.switchacc)
@@ -205,20 +211,18 @@ class Dashboard(QMainWindow):
         # Pastikan nama objek di Qt Designer adalah 'addsavings'
         self.addsavings.clicked.connect(self.goToPlusSavingPage)
 
-        #untuk label saldo: saldonum
-        saldo = 150000
-        layout = QtWidgets.QVBoxLayout(self.saldonum)
-        label = QtWidgets.QLabel(f"Rp {saldo:,}")
-        label.setAlignment(QtCore.Qt.AlignCenter)
-        label.setStyleSheet("font-size: 80px; font-weight: bold;")
-        layout.addWidget(label)
-        self.saldonum.setLayout(layout)
-
         outcome = 120000
-        monthlyusage = outcome / saldo * 100
+        monthlyusage = outcome / self.saldo * 100
         self.monthlyusagebar.setValue(int(monthlyusage))
         self.monthlyusagebar.setMaximum(100)
         self.monthlyusagebar.setMinimum(0)
+
+    def load_balance(self):
+        layout = QtWidgets.QVBoxLayout(self.saldonum)
+        print(self.saldo)
+        self.saldonum.setLayout(layout)
+        self.saldonum.setStyleSheet("font-size: 80px; font-weight: bold; background-color: #b2a7dd; border-radius: 40px; text-align: center;")
+        self.saldonum.setText(f"Rp. {self.saldo:,}")
 
     # buat ngelola data tabungan
     def load_user_data(self, username):
@@ -364,7 +368,8 @@ class Dashboard(QMainWindow):
 
     # bikinan naryama
     def kalkuWindow(self):
-        print("Kalku Window")
+        kalku.activeuser = activeuser
+        kalku.display_balance()
         widget.setCurrentIndex(3)
         
     # pindah window saving
@@ -474,7 +479,7 @@ if __name__ == "__main__":
     global dashboard
     dashboard = Dashboard()
     widget.addWidget(dashboard)
-    kalku=Kalku(widget)
+    kalku=Kalku(widget, activeuser)
     widget.addWidget(kalku)
     
     # tambahkan halaman tabungan

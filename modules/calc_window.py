@@ -6,18 +6,25 @@ from PyQt5.uic import loadUi
 from PyQt5.QtWidgets import QToolTip
 from PyQt5 import QtCore
 from PyQt5.QtCore import QTimer, QRegExp
+from transaction import TransactionApp
 
 class Kalku(QMainWindow):
-    def __init__(self, widget):
+    def __init__(self, widget, activeuser):
         super(Kalku, self).__init__()
         loadUi("ui_files/calc_window.ui", self)
         self.widget = widget
+        self.activeuser = activeuser
+        self.saldo = 0
         self.calculateButton.clicked.connect(self.calculate)
         self.backButton.clicked.connect(self.backtoDashboard)
         self.harga_barang.setValidator(QRegExpValidator(QRegExp("[0-9]*")))
         self.from_savings.setValidator(QRegExpValidator(QRegExp("[0-9]*")))
         self.target_perbulan.setValidator(QRegExpValidator(QRegExp("[0-9]*")))
 
+
+    def display_balance(self):
+        self.saldo = TransactionApp(self.activeuser).get_balance()
+        self.label.setText(f"Saldo: Rp.{self.saldo:,}")
 
     def check_result(self):
         price = self.harga_barang.text()
@@ -72,6 +79,7 @@ class Kalku(QMainWindow):
             self.target_hitung.setText("Sesuai Target Menabung: "+result_str)
             self.lower_target.setText("30% Di Bawah Target: "+lower_str)
             self.upper_target.setText("30% Di Atas Target: "+upper_str)
+
 
     def backtoDashboard(self):
         self.widget.setCurrentIndex(2)
