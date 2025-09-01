@@ -75,3 +75,4 @@ class Kalku(QMainWindow):
 
     def backtoDashboard(self):
         self.widget.setCurrentIndex(2)
+
