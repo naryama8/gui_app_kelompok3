@@ -384,8 +384,49 @@ class Dashboard(QMainWindow):
     def updateCurrentSavings(self, amount_added):
         """Slot untuk menerima sinyal dari PlusSavingWindow dan memperbarui data."""
         self.current_savings += amount_added
-        self.update_savings_display() # Perbarui tampilan di dasbor
-        self.save_user_data() # Simpan data setelah diubah
+        self.update_savings_display()
+        self.save_user_data()
+        self.add_saving_as_transaction(amount_added)
+
+    # catat tabungan sebagai transaksi
+    def add_saving_as_transaction(self, amount):
+        """Menambahkan transaksi 'Expense' ke database setiap kali menabung."""
+        if not activeuser:
+            return
+
+        try:
+            # Sambungin ke database transaksi
+            conn = sqlite3.connect('transactions.db')
+            cursor = conn.cursor()
+
+            # Buat data transaksi baru
+            new_transaction = {
+                "username": activeuser,
+                "date": datetime.now().strftime("%Y-%m-%d"),
+                "amount": -amount,  # Tabungan dicatat sebagai pengeluaran (negatif)
+                "type": "Expense",
+                "description": "Menabung"
+            }
+
+            # Masukkan ke database
+            cursor.execute(
+                "INSERT INTO transactions (username, date, amount, type, description) VALUES (?, ?, ?, ?, ?)",
+                (
+                    new_transaction["username"],
+                    new_transaction["date"],
+                    new_transaction["amount"],
+                    new_transaction["type"],
+                    new_transaction["description"]
+                )
+            )
+            conn.commit()
+            print(f"Transaksi 'Menabung' sebesar Rp {amount:,.0f} berhasil dicatat.")
+
+        except Exception as e:
+            print(f"Gagal mencatat transaksi tabungan: {e}")
+        finally:
+            if 'conn' in locals() and conn:
+                conn.close()
 
     def update_savings_display(self):
         """Memperbarui progress bar dan label tabungan di dasbor."""
