@@ -1,6 +1,4 @@
-### Cara menjalankan program
-
-DompetQ Your Personal Finance Assistant
+# DompetQ Your Personal Finance Assistant
 
 Aplikasi ini merupakan aplikasi keuangan berbasis *tracking* yang dapat membantu user untuk mengelola pendapatan, *tracking* pengeluaran, menetapkan tujuan tabungan, hingga dapat merencanakan pembelian di masa yang akan datang.
 
@@ -19,7 +17,8 @@ Fitur aplikasi yang kita punya:
 
 4. Target tabungan bulanan. Untuk membantu dalam memantau progress tabungan. Ketika sudah mencapai target yang telah ditentukan, maka jumlah uang yang telah ditabung akan secara otomatis kembali ke saldo DompetQ
 
-
+### Cara menjalankan program
+Buka file "module" -> lalu jalankan "main.py"
 
 
 
