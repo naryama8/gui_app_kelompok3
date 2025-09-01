@@ -41,7 +41,6 @@ class TransactionApp(QMainWindow):
         self.pushButton.clicked.connect(self.add_transaction_dialog)
         self.setup_table()
         
-        # Jika tidak ada data, generate sample data
         if not self.transactions:
             self.generate_sample_data()
         
@@ -51,8 +50,6 @@ class TransactionApp(QMainWindow):
         """Initialize database dan buat tabel jika belum ada"""
         self.conn = sqlite3.connect('transactions.db')
         self.cursor = self.conn.cursor()
-        
-        # Buat tabel transactions jika belum ada
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS transactions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -86,7 +83,7 @@ class TransactionApp(QMainWindow):
         """Load transaksi hanya untuk user yang aktif"""
         self.cursor.execute(
             "SELECT username, date, amount, type, description FROM transactions WHERE username = ? ORDER BY date DESC",
-            (self.username,)  # ✅ Filter berdasarkan username
+            (self.username,) 
     )
         rows = self.cursor.fetchall()
     
@@ -109,25 +106,18 @@ class TransactionApp(QMainWindow):
             (transaction["username"], transaction["date"], transaction["amount"], transaction["type"], transaction["description"])
         )
         self.conn.commit()
-        
-        # Dapatkan ID terakhir yang dimasukkan
         last_id = self.cursor.lastrowid
         return last_id
 
     def delete_transaction(self, index):
         """Hapus transaksi dari database berdasarkan index"""
         if 0 <= index < len(self.transactions):
-            # Dapatkan data transaksi yang akan dihapus
             transaction = self.transactions[index]
-            
-            # Hapus dari database (dengan LIMIT untuk keamanan)
             self.cursor.execute(
                 "DELETE FROM transactions WHERE username=? AND date = ? AND amount = ? AND type = ? AND description = ? LIMIT 1",
                 (transaction["username"], transaction["date"], transaction["amount"], transaction["type"], transaction["description"])
             )
             self.conn.commit()
-            
-            # Hapus dari list
             del self.transactions[index]
             return True
         return False
@@ -136,30 +126,22 @@ class TransactionApp(QMainWindow):
         """Setup matplotlib chart di QGraphicsView"""
         self.figure = Figure(figsize=(5, 4))
         self.canvas = FigureCanvas(self.figure)
-        
-        # Buat scene baru dan tambahkan canvas
         scene = QtWidgets.QGraphicsScene()
         scene.addWidget(self.canvas)
         self.graphicsView.setScene(scene)
         
     def setup_trend_chart(self):
         """Setup matplotlib chart untuk outcomes trend"""
-        # Cari widget yang akan menampilkan grafik trend
         self.trend_container = self.findChild(QtWidgets.QWidget, "widget_2")
         if self.trend_container:
-            # Hapus layout lama jika ada
             if self.trend_container.layout():
                 QtWidgets.QWidget().setLayout(self.trend_container.layout())
             
-            # Buat layout baru
             layout = QtWidgets.QVBoxLayout(self.trend_container)
             layout.setContentsMargins(10, 30, 10, 10)
             
-            # Buat figure dan canvas baru
             self.trend_figure = Figure(figsize=(5, 3))
-            self.trend_canvas = FigureCanvas(self.trend_figure)
-            
-            # Tambahkan canvas ke layout
+            self.trend_canvas = FigureCanvas(self.trend_figure)            
             layout.addWidget(self.trend_canvas)
         
     def setup_table(self):
@@ -197,10 +179,8 @@ class TransactionApp(QMainWindow):
         dialog = AddTransactionDialog(self.username)
         if dialog.exec_() == QtWidgets.QDialog.Accepted:
             transaction = dialog.get_transaction()
-            if transaction:  # Pastikan transaction tidak None
-                # Simpan ke database
+            if transaction: 
                 self.save_transaction(transaction)
-                # Tambahkan ke list (di awal untuk urutan DESC)
                 self.transactions.insert(0, transaction)
                 self.update_display()
 
@@ -242,7 +222,6 @@ class TransactionApp(QMainWindow):
         # Hitung rata-rata pengeluaran bulanan
         avg_monthly_expense = self.calculate_avg_monthly_expense()
     
-        # Update labels yang ada di UI file
         self.label.setText(f"Rp {balance:,.0f}")      # My Balance
         self.label_2.setText(f"Rp {total_income:,.0f}")  # Income
         self.label_3.setText(f"Rp {total_expense:,.0f}") # Expense
@@ -253,20 +232,17 @@ class TransactionApp(QMainWindow):
         if not self.transactions:
             return 0
             
-        # Kelompokkan transaksi berdasarkan bulan
         monthly_expenses = defaultdict(float)
         
         for trans in self.transactions:
-            if trans["amount"] < 0:  # Hanya transaksi pengeluaran
+            if trans["amount"] < 0: 
                 try:
-                    # Parse tanggal
                     date_obj = datetime.strptime(trans["date"], "%Y-%m-%d")
                     month_year = date_obj.strftime("%Y-%m")
                     monthly_expenses[month_year] += abs(trans["amount"])
                 except ValueError:
                     continue
         
-        # Hitung rata-rata jika ada data
         if monthly_expenses:
             return sum(monthly_expenses.values()) / len(monthly_expenses)
         else:
@@ -283,9 +259,7 @@ class TransactionApp(QMainWindow):
                 amount_text = f"-{amount_text}"
             self.tableWidget.setItem(row, 1, QTableWidgetItem(amount_text))
             self.tableWidget.setItem(row, 2, QTableWidgetItem(trans["type"]))
-            self.tableWidget.setItem(row, 3, QTableWidgetItem(trans["description"]))
-            
-            # Tambahkan tombol hapus
+            self.tableWidget.setItem(row, 3, QTableWidgetItem(trans["description"]))    
             delete_button = QtWidgets.QPushButton("Hapus")
             delete_button.clicked.connect(lambda checked, r=row: self.delete_selected_transaction(r))
             self.tableWidget.setCellWidget(row, 4, delete_button)
@@ -295,7 +269,6 @@ class TransactionApp(QMainWindow):
         self.figure.clear()
         
         if not self.transactions:
-            # Tampilkan pesan jika tidak ada data
             ax = self.figure.add_subplot(111)
             ax.text(0.5, 0.5, 'No Data Available', 
                    horizontalalignment='center', verticalalignment='center',
@@ -307,8 +280,6 @@ class TransactionApp(QMainWindow):
         amounts = np.array([t["amount"] for t in self.transactions])
         income_amounts = amounts[amounts > 0]
         expense_amounts = abs(amounts[amounts < 0])
-        
-        # Set background color untuk figure
         self.figure.patch.set_facecolor('#f0f0f0')
         
         ax = self.figure.add_subplot(111)
@@ -329,7 +300,7 @@ class TransactionApp(QMainWindow):
             sizes.append(np.sum(expense_amounts))
             colors.append('#e74c3c')
         
-        if sizes:  # Only create pie chart if there's data
+        if sizes:  
             wedges, texts, autotexts = ax.pie(sizes, labels=labels, colors=colors, 
                                             autopct='%1.1f%%', startangle=90)
             ax.set_title('Income vs Expense', fontsize=12, pad=20)
@@ -338,13 +309,11 @@ class TransactionApp(QMainWindow):
                    horizontalalignment='center', verticalalignment='center',
                    transform=ax.transAxes, fontsize=14)
         
-        # Pastikan layout tight agar tidak ada whitespace berlebih
         self.figure.tight_layout()
         self.canvas.draw()
     
     def update_trend_chart(self):
         """Update trend chart untuk outcomes dengan grafik batang"""
-        # Periksa apakah trend_container dan trend_figure ada
         if not hasattr(self, 'trend_container') or not self.trend_container:
             return
             
@@ -354,7 +323,6 @@ class TransactionApp(QMainWindow):
         self.trend_figure.clear()
         
         if not self.transactions:
-            # Tampilkan pesan jika tidak ada data
             ax = self.trend_figure.add_subplot(111)
             ax.text(0.5, 0.5, 'No Data Available', 
                    horizontalalignment='center', verticalalignment='center',
@@ -365,13 +333,11 @@ class TransactionApp(QMainWindow):
                 self.trend_canvas.draw()
             return
         
-        # Kelompokkan pengeluaran berdasarkan bulan
         monthly_expenses = defaultdict(float)
         
         for trans in self.transactions:
-            if trans["amount"] < 0:  # Hanya transaksi pengeluaran
+            if trans["amount"] < 0:  
                 try:
-                    # Parse tanggal
                     date_obj = datetime.strptime(trans["date"], "%Y-%m-%d")
                     month_year = date_obj.strftime("%Y-%m")
                     monthly_expenses[month_year] += abs(trans["amount"])
@@ -379,7 +345,6 @@ class TransactionApp(QMainWindow):
                     continue
         
         if not monthly_expenses:
-            # Tampilkan pesan jika tidak ada data pengeluaran
             ax = self.trend_figure.add_subplot(111)
             ax.text(0.5, 0.5, 'No Expense Data', 
                    horizontalalignment='center', verticalalignment='center',
@@ -390,13 +355,9 @@ class TransactionApp(QMainWindow):
                 self.trend_canvas.draw()
             return
         
-        # Urutkan bulan
         sorted_months = sorted(monthly_expenses.keys())
-        expenses = [monthly_expenses[month] for month in sorted_months]
-        
-        # Set background color untuk figure
+        expenses = [monthly_expenses[month] for month in sorted_months] 
         self.trend_figure.patch.set_facecolor('#f0f0f0')
-        
         ax = self.trend_figure.add_subplot(111)
         ax.set_facecolor('#f0f0f0')
         
@@ -407,17 +368,13 @@ class TransactionApp(QMainWindow):
         ax.tick_params(axis='x', rotation=45, labelsize=7)
         ax.tick_params(axis='y', labelsize=7)
         
-        # Tambahkan nilai di atas setiap batang
         for bar in bars:
             height = bar.get_height()
             ax.text(bar.get_x() + bar.get_width()/2., height,
                     f'Rp {height:,.0f}',
                     ha='center', va='bottom', fontsize=6)
         
-        # Format sumbu y dengan separator ribuan
         ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x:,.0f}'))
-        
-        # Pastikan layout tight agar tidak ada whitespace berlebih
         self.trend_figure.tight_layout()
         
         if hasattr(self, 'trend_canvas'):
@@ -554,7 +511,6 @@ class SetDate(QMainWindow):
         self.setWindowTitle("Set Date Transaction")
         self.setFixedSize(1500, 1000)
 
-        # Connect tombol
         for button_name, method in [
             ('setstartpls', self.setstartdatedulu),
             ('setendpls', self.setenddatedulu),
@@ -591,13 +547,11 @@ class SetDate(QMainWindow):
     def readdate(self):
         """Simpan start dan end date ke file JSON"""
         try:
-            # Ambil tanggal terbaru dari calendar
             start_date_obj = self.sdatecal.selectedDate()
             end_date_obj = self.edatecal.selectedDate()
             start_date = start_date_obj.toString("yyyy-MM-dd")
             end_date = end_date_obj.toString("yyyy-MM-dd")
 
-            # Validasi: end date tidak boleh sebelum start date
             if start_date_obj > end_date_obj:
                 QMessageBox.warning(self, "Error", "End date cannot be before start date!")
                 return
@@ -605,7 +559,6 @@ class SetDate(QMainWindow):
             filename = 'dates.json'
             data = {}
 
-            # Baca data lama jika ada
             if os.path.exists(filename):
                 with open(filename, 'r') as f:
                     try:
@@ -613,13 +566,11 @@ class SetDate(QMainWindow):
                     except json.JSONDecodeError:
                         data = {}
 
-            # Update data user
             data[self.username] = {
                 "startdate": start_date,
                 "enddate": end_date
             }
 
-            # Simpan ke file
             with open(filename, 'w') as f:
                 json.dump(data, f, indent=4)
 
