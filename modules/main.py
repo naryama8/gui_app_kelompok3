@@ -22,7 +22,6 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 from transaction import SetDate, TransactionApp
 import io
-# Mengimpor fungsi baru
 from prediction_ols import get_hist_and_pred_data
 import pandas as pd
 import matplotlib.dates as mdates
@@ -211,6 +210,9 @@ class Dashboard(QMainWindow):
         # Pastikan nama objek di Qt Designer adalah 'addsavings'
         self.addsavings.clicked.connect(self.goToPlusSavingPage)
 
+        # tombol withdraw
+        self.withdraw.clicked.connect(self.manual_withdraw)
+
         outcome = 120000
         monthlyusage = outcome / self.saldo * 100
         self.monthlyusagebar.setValue(int(monthlyusage))
@@ -233,6 +235,7 @@ class Dashboard(QMainWindow):
         self.monthly_target = user_data.get('target', 0.0)
         self.current_savings = user_data.get('savings', 0.0)
         self.update_savings_display()
+        self.check_for_auto_withdraw()
 
     def save_user_data(self):
         """Menyimpan data tabungan pengguna saat ini ke file JSON."""
@@ -389,9 +392,10 @@ class Dashboard(QMainWindow):
     def updateCurrentSavings(self, amount_added):
         """Slot untuk menerima sinyal dari PlusSavingWindow dan memperbarui data."""
         self.current_savings += amount_added
-        self.update_savings_display()
-        self.save_user_data()
         self.add_saving_as_transaction(amount_added)
+        self.save_user_data()
+        self.update_savings_display()
+        self.check_for_auto_withdraw()
 
     # catat tabungan sebagai transaksi
     def add_saving_as_transaction(self, amount):
@@ -400,20 +404,15 @@ class Dashboard(QMainWindow):
             return
 
         try:
-            # Sambungin ke database transaksi
             conn = sqlite3.connect('transactions.db')
             cursor = conn.cursor()
-
-            # Buat data transaksi baru
             new_transaction = {
                 "username": activeuser,
                 "date": datetime.now().strftime("%Y-%m-%d"),
-                "amount": -amount,  # Tabungan dicatat sebagai pengeluaran (negatif)
+                "amount": -amount,
                 "type": "Expense",
                 "description": "Menabung"
             }
-
-            # Masukkan ke database
             cursor.execute(
                 "INSERT INTO transactions (username, date, amount, type, description) VALUES (?, ?, ?, ?, ?)",
                 (
@@ -426,7 +425,6 @@ class Dashboard(QMainWindow):
             )
             conn.commit()
             print(f"Transaksi 'Menabung' sebesar Rp {amount:,.0f} berhasil dicatat.")
-
         except Exception as e:
             print(f"Gagal mencatat transaksi tabungan: {e}")
         finally:
@@ -451,8 +449,7 @@ class Dashboard(QMainWindow):
             self.savings_label.setStyleSheet("font-size: 14px; color: white; background-color: transparent;")
             layout.addWidget(self.savings_label)
             self.namatarget.setLayout(layout)
-        
-        # ubah format teks tampilan
+
         if self.monthly_target > 0:
             text = f"Anda telah menabung:\nRp {self.current_savings:,.0f}\ndari target Rp {self.monthly_target:,.0f}"
         else:
@@ -463,9 +460,78 @@ class Dashboard(QMainWindow):
     def updateMonthlyTarget(self, new_target):
         """Slot untuk menerima sinyal dari SavingWindow dan memperbarui target."""
         self.monthly_target = new_target
-        print(f"Target bulanan baru telah ditetapkan: Rp {self.monthly_target:,.0f}")
-        self.update_savings_display() # Perbarui tampilan di dasbor
-        self.save_user_data() # Simpan data setelah diubah
+        self.update_savings_display()
+        self.save_user_data()
+        self.check_for_auto_withdraw()
+
+    # fungsi withdraw
+    def manual_withdraw(self):
+        """Fungsi untuk tombol withdraw manual."""
+        if self.current_savings <= 0:
+            QMessageBox.information(self, "Informasi", "Anda tidak memiliki tabungan untuk ditarik.")
+            return
+
+        reply = QMessageBox.question(self, 'Konfirmasi',
+                                     f'Anda yakin ingin menarik seluruh tabungan sebesar Rp {self.current_savings:,.0f}?',
+                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+
+        if reply == QMessageBox.Yes:
+            self.perform_withdraw(self.current_savings)
+
+    def check_for_auto_withdraw(self):
+        """Memeriksa apakah target tabungan sudah tercapai."""
+        if self.monthly_target > 0 and self.current_savings >= self.monthly_target:
+            print("Target tercapai! Melakukan penarikan otomatis.")
+            self.perform_withdraw(self.current_savings, is_auto=True)
+
+    def perform_withdraw(self, amount, is_auto=False):
+        """Logika inti untuk melakukan penarikan, baik manual maupun otomatis."""
+        # 1. Catat sebagai transaksi pemasukan (Income)
+        self.add_withdraw_as_transaction(amount)
+
+        # 2. Reset tabungan saat ini menjadi 0
+        self.current_savings = 0.0
+
+        # 3. Simpan state tabungan yang baru (0)
+        self.save_user_data()
+
+        # 4. Perbarui tampilan di dasbor
+        self.update_savings_display()
+
+        # 5. Beri notifikasi kepada pengguna
+        if is_auto:
+            QMessageBox.information(self, "Selamat!",
+                                    f"Target tabungan Anda tercapai! Sebesar Rp {amount:,.0f} telah ditarik dan ditambahkan ke saldo Anda.")
+        else:
+            QMessageBox.information(self, "Berhasil",
+                                    f"Sebesar Rp {amount:,.0f} berhasil ditarik dan ditambahkan ke saldo Anda.")
+
+    def add_withdraw_as_transaction(self, amount):
+        """Menambahkan transaksi 'Income' ke database saat penarikan."""
+        if not activeuser:
+            return
+        try:
+            conn = sqlite3.connect('transactions.db')
+            cursor = conn.cursor()
+            new_transaction = {
+                "username": activeuser,
+                "date": datetime.now().strftime("%Y-%m-%d"),
+                "amount": amount,  # Penarikan dicatat sebagai pemasukan (positif)
+                "type": "Income",
+                "description": "Penarikan Tabungan"
+            }
+            cursor.execute(
+                "INSERT INTO transactions (username, date, amount, type, description) VALUES (?, ?, ?, ?, ?)",
+                (new_transaction["username"], new_transaction["date"], new_transaction["amount"],
+                 new_transaction["type"], new_transaction["description"])
+            )
+            conn.commit()
+            print(f"Transaksi 'Penarikan Tabungan' sebesar Rp {amount:,.0f} berhasil dicatat.")
+        except Exception as e:
+            print(f"Gagal mencatat transaksi penarikan: {e}")
+        finally:
+            if 'conn' in locals() and conn:
+                conn.close()
 
 
 if __name__ == "__main__":
