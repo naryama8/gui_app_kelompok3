@@ -202,7 +202,6 @@ class Dashboard(QMainWindow):
         self.current_savings = 0.0
         self.update_savings_display() # Melakukan setup awal tampilan
 
-        # Hubungkan tombol 'addsavings' dari file .ui ke fungsinya
         self.addsavings.clicked.connect(self.goToPlusSavingPage)
 
         # tombol withdraw
