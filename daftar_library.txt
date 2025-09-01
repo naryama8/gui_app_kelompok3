@@ -1,0 +1,14 @@
+DAFTAR LIBRARY TUGAS GUI KELOMPOK 3
+
+sys
+os
+numpy
+json
+sqlite3
+PyQt5  → QtWidgets, QtCore, loadUi, uic, QMainWindow, QApplication, QMessageBox, QVBoxLayout, QPushButton, loadUi, QToolTip, QLabel, QInputDialog, QFont, QPixmap, Qtimer
+pandas
+matplotlib.pyplot
+matplotlib.dates
+scikit learn
+subprocess
+io
