@@ -311,7 +311,7 @@ font-weight: bold;</string>
               </spacer>
              </item>
              <item>
-              <widget class="QPushButton" name="mytrx">
+              <widget class="QPushButton" name="setpoint">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                  <horstretch>0</horstretch>
@@ -332,7 +332,7 @@ height: 3px;
 font-weight: bold;</string>
                </property>
                <property name="text">
-                <string>My Transaction</string>
+                <string>Set Point Date</string>
                </property>
               </widget>
              </item>

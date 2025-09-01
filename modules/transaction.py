@@ -1,7 +1,8 @@
 import sys
 import os
+import json
 from PyQt5 import uic, QtWidgets, QtCore
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QTableWidgetItem
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QTableWidgetItem, QLabel, QCalendarWidget, QPushButton
 from PyQt5.QtCore import QDate, Qt
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -11,6 +12,7 @@ from datetime import datetime, timedelta
 import random
 import sqlite3
 from collections import defaultdict
+from PyQt5.uic import loadUi
 
 try:
     import rsc_rc
@@ -22,7 +24,6 @@ class TransactionApp(QMainWindow):
     def __init__(self, activeuser):
         super().__init__()
         self.username=activeuser
-        dialog = AddTransactionDialog(self.username) 
         try:
             uic.loadUi('ui_files/transaction.ui', self)
         except FileNotFoundError:
@@ -79,6 +80,26 @@ class TransactionApp(QMainWindow):
                 "description": row[4]
             })
         
+        return transactions
+    
+    def load_transactions(self):
+        """Load transaksi hanya untuk user yang aktif"""
+        self.cursor.execute(
+            "SELECT username, date, amount, type, description FROM transactions WHERE username = ? ORDER BY date DESC",
+            (self.username,)  # ✅ Filter berdasarkan username
+    )
+        rows = self.cursor.fetchall()
+    
+        transactions = []
+        for row in rows:
+            transactions.append({
+                "username": row[0],
+                "date": row[1],
+                "amount": row[2],
+                "type": row[3],
+                "description": row[4]
+            })
+    
         return transactions
 
     def save_transaction(self, transaction):
@@ -146,23 +167,23 @@ class TransactionApp(QMainWindow):
         headers = ["Date", "Amount", "Type", "Description", "Actions"]
         self.tableWidget.setColumnCount(len(headers))
         self.tableWidget.setHorizontalHeaderLabels(headers)
-        self.tableWidget.setColumnWidth(0, 100)
-        self.tableWidget.setColumnWidth(1, 100)
-        self.tableWidget.setColumnWidth(2, 80)
+        self.tableWidget.setColumnWidth(0, 200)
+        self.tableWidget.setColumnWidth(1, 200)
+        self.tableWidget.setColumnWidth(2, 200)
         self.tableWidget.setColumnWidth(3, 200)
         self.tableWidget.setColumnWidth(4, 100)
 
     def generate_sample_data(self):
         """Generate sample transaction data untuk demo"""
         sample_transactions = [
-            {"date": "2024-01-15", "amount": 5000000, "type": "Income", "description": "Gaji Bulanan"},
-            {"date": "2024-01-16", "amount": -500000, "type": "Expense", "description": "Belanja Groceries"},
-            {"date": "2024-01-20", "amount": -200000, "type": "Expense", "description": "Bensin Motor"},
-            {"date": "2024-01-25", "amount": 1000000, "type": "Income", "description": "Freelance Project"},
-            {"date": "2024-02-01", "amount": -1500000, "type": "Expense", "description": "Bayar Kost"},
-            {"date": "2024-02-05", "amount": -300000, "type": "Expense", "description": "Makan di Resto"},
-            {"date": "2024-02-10", "amount": 2000000, "type": "Income", "description": "Bonus Kerja"},
-            {"date": "2024-02-15", "amount": -800000, "type": "Expense", "description": "Belanja Online"},
+            {"username":self.username, "date": "2024-01-15", "amount": 5000000, "type": "Income", "description": "Gaji Bulanan"},
+            {"username":self.username, "date": "2024-01-16", "amount": -500000, "type": "Expense", "description": "Belanja Groceries"},
+            {"username":self.username, "date": "2024-01-20", "amount": -200000, "type": "Expense", "description": "Bensin Motor"},
+            {"username":self.username, "date": "2024-01-25", "amount": 1000000, "type": "Income", "description": "Freelance Project"},
+            {"username":self.username, "date": "2024-02-01", "amount": -1500000, "type": "Expense", "description": "Bayar Kost"},
+            {"username":self.username, "date": "2024-02-05", "amount": -300000, "type": "Expense", "description": "Makan di Resto"},
+            {"username":self.username, "date": "2024-02-10", "amount": 2000000, "type": "Income", "description": "Bonus Kerja"},
+            {"username":self.username, "date": "2024-02-15", "amount": -800000, "type": "Expense", "description": "Belanja Online"},
         ]
         
         for trans in sample_transactions:
@@ -173,7 +194,7 @@ class TransactionApp(QMainWindow):
 
     def add_transaction_dialog(self):
         """Dialog untuk menambah transaksi baru"""
-        dialog = AddTransactionDialog(self)
+        dialog = AddTransactionDialog(self.username)
         if dialog.exec_() == QtWidgets.QDialog.Accepted:
             transaction = dialog.get_transaction()
             if transaction:  # Pastikan transaction tidak None
@@ -414,7 +435,7 @@ class AddTransactionDialog(QtWidgets.QDialog):
         self.username = username
         self.setWindowTitle("Add New Transaction")
         self.setModal(True)
-        self.setFixedSize(350, 280)
+        self.setFixedSize(500, 700)
         
         # Main layout
         main_layout = QtWidgets.QVBoxLayout()
@@ -506,14 +527,97 @@ class AddTransactionDialog(QtWidgets.QDialog):
         except ValueError:
             QMessageBox.warning(self, "Invalid Input", "Please enter a valid number for amount!")
             return None
+        
+        
+class SetDate(QMainWindow):
+    def __init__(self, activeuser):
+        super().__init__()
+        self.username = activeuser
+        self.startdate=None
+        self.enddate=None
 
-def main():
-    app = QApplication(sys.argv)
-    app.setStyle('Fusion')
-    window = TransactionApp(activeuser)
-    window.show()
-    
-    sys.exit(app.exec_())
 
-if __name__ == "__main__":
-    main()
+        # Load UI
+        try:
+            loadUi('ui_files/setdate.ui', self)
+        except FileNotFoundError:
+            QMessageBox.critical(None, "Error", "File setdate.ui tidak ditemukan!")
+            sys.exit(1)
+        
+        self.setWindowTitle("Set Date Transaction")
+        self.setFixedSize(1500, 1000)
+
+        # Connect tombol
+        for button_name, method in [
+            ('setstartpls', self.setstartdatedulu),
+            ('setendpls', self.setenddatedulu),
+            ('savedate', self.readdate)
+        ]:
+            btn = getattr(self, button_name, None)
+            if btn:
+                btn.clicked.connect(method)
+            else:
+                print(f"Button {button_name} not found in UI file!")
+
+    def setstartdatedulu(self):
+        """Ambil tanggal dari QCalendarWidget untuk start date dan tampilkan di QLabel"""
+        try:
+            self.startdate = self.sdatecal.selectedDate().toString("yyyy-MM-dd")
+            self.sdate.setText(self.startdate)
+            print(f"Start date set to: {self.startdate}")
+        except AttributeError:
+            print("sdatecal atau sdate tidak ditemukan di UI!")
+        except Exception as e:
+            print(f"Error setting start date: {e}")
+
+    def setenddatedulu(self):
+        """Ambil tanggal dari QCalendarWidget untuk end date dan tampilkan di QLabel"""
+        try:
+            self.enddate = self.edatecal.selectedDate().toString("yyyy-MM-dd")
+            self.edate.setText(self.enddate)
+            print(f"End date set to: {self.enddate}")
+        except AttributeError:
+            print("edatecal atau edate tidak ditemukan di UI!")
+        except Exception as e:
+            print(f"Error setting end date: {e}")
+
+    def readdate(self):
+        """Simpan start dan end date ke file JSON"""
+        try:
+            # Ambil tanggal terbaru dari calendar
+            start_date_obj = self.sdatecal.selectedDate()
+            end_date_obj = self.edatecal.selectedDate()
+            start_date = start_date_obj.toString("yyyy-MM-dd")
+            end_date = end_date_obj.toString("yyyy-MM-dd")
+
+            # Validasi: end date tidak boleh sebelum start date
+            if start_date_obj > end_date_obj:
+                QMessageBox.warning(self, "Error", "End date cannot be before start date!")
+                return
+
+            filename = 'dates.json'
+            data = {}
+
+            # Baca data lama jika ada
+            if os.path.exists(filename):
+                with open(filename, 'r') as f:
+                    try:
+                        data = json.load(f)
+                    except json.JSONDecodeError:
+                        data = {}
+
+            # Update data user
+            data[self.username] = {
+                "startdate": start_date,
+                "enddate": end_date
+            }
+
+            # Simpan ke file
+            with open(filename, 'w') as f:
+                json.dump(data, f, indent=4)
+
+            QMessageBox.information(self, "Sukses", "Tanggal berhasil disimpan!")
+
+        except Exception as e:
+            print(f"Error in readdate: {e}")
+            QMessageBox.critical(self, "Error", f"Terjadi kesalahan: {e}")

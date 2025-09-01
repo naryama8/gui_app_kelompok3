@@ -1,155 +1,149 @@
-#ini modul buat bikin prediksi dalam rentang maksimal 30 hari ke depan kalo pengguna baru masukin sedikit data
-#basicnya adalah numerical method, yaotu Ordinary Leas Square (OLS)
-#Rencananya, bakal pake polinomial regression yang digabung sama fourier regression
-
+import os
+import json
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
-import sklearn
-
-startdate="2024-01-01" #ganti ke pembaca di kalendar widget (..w..)
-enddate="2024-03-31" #ganti ke pembaca kalendar widget (..W..)
-dates = pd.date_range(start=startdate, end=enddate, freq="D")
-
-#kita pake 2 variabel, yaitu t dan t_learn. t akan jadi index buat ols
-# nilainya akan reset setiap ganti bulan atau ganti range
-# tapi t_learn akan jadi index yang tetap walau range berubah, fungsinya cuma buat bikin learningnya makin smooth
-
-X = np.arange(len(dates))
-#dummy y
-np.random.seed(42)  # biar hasil random konsisten
-n = len(dates)
-
-# tren linear sederhana
-trend = 200 * np.arange(n)
-
-# pola musiman bulanan (gelombang sinus 30-harian)
-seasonal = 5000 * np.sin(2 * np.pi * np.arange(n) / 30)
-
-# random noise
-noise = np.random.normal(0, 2000, n)
-
-# gabungan jadi dummy pengeluaran (selalu positif)
-y = 20000 + trend + seasonal + noise
-y = np.maximum(y, 1000)  # jaga jangan sampai negatif
-
-t_learn=0
-
-
-#lanjut di collab dulu, nanti benerin download pyhon dulu
-
-#Masuk fitur musiman
-X_features = []
-for t in X.flatten():
-  X_features.append([
-      1,
-      t,
-      np.sin(2*np.pi*t/30),
-      np.cos(2*np.pi*t/30)
-  ])
-
-X_features = np.array(X_features)
-
-#latih model OLS
-
-model = sm.OLS(y, X_features)
-results = model.fit()
-
-print(results.summary())
-
-future_days = np.arange(max(X)+1, max(X)+31)
-future_features = []
-
-for t in future_days:
-  future_features.append([
-      1,
-      t,
-      np.sin(2*np.pi*t/30),
-      np.cos(2*np.pi*t/30)
-  ])
-future_features = np.array(future_features)
-
-y_pred = results.predict(future_features)
-print(y_pred)
-
-n=len(X)
-
-#titik pemisah train/test
-split = int(n*0.8)
-
-X_train, X_test = X_features[:split], X_features[split:]
-y_train, y_test = y[:split], y[split:]
-
-#buat ngelatih model pake data training
-model = sm.OLS(y_train, X_train)
-results = model.fit()
-
-#prediksi data test
-y_test_pred = results.predict(X_test)
-
-#hitung error
-from sklearn.metrics import mean_squared_error, mean_absolute_error
-
-mse=mean_squared_error(y_test, y_test_pred)
-mae=mean_absolute_error(y_test, y_test_pred)
-
-print(f"MSE: {mse:.2f}")
-print(f"MAE: {mae:.2f}")
-
-#ini buat visualisasi hasil
-
+import sqlite3
 import matplotlib.pyplot as plt
+from sklearn.metrics import mean_squared_error, mean_absolute_error
+import matplotlib.dates as mdates
+from datetime import date
 
-plt.figure(figsize=(12,5))
-plt.plot(dates[:split], y_train, label="Train (Actual)")
-plt.plot(dates[:split], results.predict(X_train), "--", label="Train (Predicted)")
-plt.plot(dates[split:], y_test, "o", label="Test (Actual)")
-plt.plot(dates[split:], y_test_pred, "x--", label="Test (Predicted)")
-plt.legend()
-plt.show()
+def get_hist_and_pred_data(username, startdate, enddate):
+    """
+    Melatih model OLS dan mengembalikan data historis serta data prediksi
+    dalam bentuk DataFrame. Tidak menampilkan grafik.
+    """
+    
+    # -----------------------------------------
+    # Config / file names
+    # -----------------------------------------
+    DB_FILE = "transactions.db"
+    INDEX_MAP_FILE = "index_map.json"
+    
+    # Konversi input tanggal ke format yang benar
+    startdate = pd.to_datetime(startdate)
+    enddate = pd.to_datetime(enddate)
 
-#BIKIN PREDIKSI 30 HARI KE DEPAN===
-future_dates = pd.date_range(start=dates[-1] + pd.Timedelta(days=1), periods=30, freq="D")
+    # -----------------------------------------
+    # 1) Baca data transaksi dari DB
+    # -----------------------------------------
+    conn = sqlite3.connect(DB_FILE)
+    df = pd.read_sql_query("SELECT username, type, amount, date FROM transactions", conn)
+    conn.close()
 
-#bagian ini untuk prediksi 30 hari ke depan
-future_days = np.arange(max(X)+1, max(X)+31)
-future_features = []
+    # Filter & Agregasi
+    df = df[(df["username"] == username) & (df["type"].str.lower() == "expense")]
+    df["date"] = pd.to_datetime(df["date"])
+    df = df.groupby("date", as_index=False)["amount"].sum().sort_values("date")
+    df["amount"] = df["amount"].abs()
 
-for t in future_days:
-  future_features.append([
-      1,
-      t,
-      np.sin(2*np.pi*t/30),
-      np.cos(2*np.pi*t/30)
-  ])
+    if df.empty or len(df) < 2:
+        print("Tidak cukup data historis untuk prediksi.")
+        return pd.DataFrame(), pd.DataFrame()
 
-future_features = np.array(future_features)
-y_future_pred = results.predict(future_features)
+    # -----------------------------------------
+    # 2) Persiapan Index Mapping yang Persist
+    # -----------------------------------------
+    if os.path.exists(INDEX_MAP_FILE):
+        with open(INDEX_MAP_FILE, "r") as f:
+            idx_store = json.load(f)
+        date_to_index = {pd.to_datetime(k): v for k, v in idx_store.get("date_to_index", {}).items()}
+        last_index = int(idx_store.get("last_index", -1))
+    else:
+        date_to_index = {}
+        last_index = -1
 
+    dates_in_db_min = df["date"].min()
+    existing_map_min = min(date_to_index.keys()) if date_to_index else None
+    
+    global_min = dates_in_db_min if dates_in_db_min is not None else existing_map_min
+    if global_min is None:
+        global_min = startdate
+    else:
+        global_min = min(global_min, startdate)
 
-plt.figure(figsize=(12,5))
-plt.plot(dates, y, label="Data Actual", marker="o")
-plt.plot(future_dates, y_future_pred, "--", label="Prediksi 30 Hari ke Depan", marker="x")
-plt.legend()
-plt.title("Prediksi Pengeluaran 30 Hari ke Depan (OLS + Fourier)")
-plt.show()
+    global_max = max(df["date"].max(), enddate)
+    global_dates = pd.date_range(start=global_min, end=global_max, freq="D")
 
-pred_df = pd.DataFrame({
-    "date": future_dates,
-    "predicted_expense": y_future_pred
-})
-pred_df.to_csv("prediksi_30hari.csv", index=False)
+    for d in global_dates:
+        if d not in date_to_index:
+            last_index += 1
+            date_to_index[d] = last_index
 
+    to_save = {
+        "last_index": last_index,
+        "date_to_index": {d.strftime("%Y-%m-%d"): idx for d, idx in date_to_index.items()}
+    }
+    with open(INDEX_MAP_FILE, "w") as f:
+        json.dump(to_save, f)
 
-# Prediksi untuk semua data (train+test)
-y_all_pred = results.predict(X_features)
+    # -----------------------------------------
+    # 3) Siapkan data historis untuk model
+    # -----------------------------------------
+    hist_df = df.copy().sort_values("date").reset_index(drop=True)
+    hist_df["t_index"] = hist_df["date"].map(lambda d: date_to_index[pd.to_datetime(d)])
 
-total_actual_all = np.sum(y)
-total_pred_all = np.sum(y_all_pred)
+    # -----------------------------------------
+    # 4) Fitur regresi
+    # -----------------------------------------
+    def make_features_from_indices(t_indices):
+        features = []
+        for t in t_indices:
+            features.append([1, t, np.sin(2 * np.pi * t / 7), np.cos(2 * np.pi * t / 7)])
+        return np.array(features)
 
-print("\n=== Perbandingan Total (Keseluruhan Data) ===")
-print(f"Total Aktual    : {total_actual_all:,.2f}")
-print(f"Total Prediksi  : {total_pred_all:,.2f}")
-print(f"Selisih         : {total_pred_all - total_actual_all:,.2f}")
-print(f"Persentase Error: {100 * (total_pred_all - total_actual_all) / total_actual_all:.2f}%")
+    X_features_all = make_features_from_indices(hist_df["t_index"].values)
+    y_all = hist_df["amount"].values
+    
+    # Latih model pada SELURUH data historis
+    model = sm.OLS(y_all, X_features_all)
+    results = model.fit()
 
+    # -----------------------------------------
+    # 5) Aturan rekomendasi panjang prediksi
+    # -----------------------------------------
+    n_learn_days = len(hist_df)
+    if n_learn_days < 14: max_pred = 0
+    elif n_learn_days < 21: max_pred = 3
+    elif n_learn_days < 35: max_pred = 7
+    elif n_learn_days < 49: max_pred = 14
+    elif n_learn_days < 63: max_pred = 21
+    else: max_pred = 30
+
+    print(f"\nJumlah hari yang dipelajari: {n_learn_days}. Max prediksi direkomendasikan: {max_pred} hari.")
+
+    # -----------------------------------------
+    # 6) Siapkan daftar tanggal prediksi
+    # -----------------------------------------
+    # Prediksi selalu dimulai sehari setelah data historis terakhir
+    last_hist_date = hist_df["date"].max()
+    future_startdate = last_hist_date + pd.Timedelta(days=1)
+    
+    requested_pred_dates = pd.date_range(start=future_startdate, end=enddate, freq="D")
+    
+    n_requested = len(requested_pred_dates)
+    n_pred = min(n_requested, max_pred, 30)
+    
+    pred_df = pd.DataFrame(columns=["date", "predicted_expense"])
+    
+    if n_pred > 0:
+        pred_dates = requested_pred_dates[:n_pred]
+        
+        future_indices = [date_to_index[pd.to_datetime(d)] for d in pred_dates]
+        future_features = make_features_from_indices(future_indices)
+        
+        y_future_pred = results.predict(future_features)
+        
+        pred_df = pd.DataFrame({
+            "date": pred_dates,
+            "predicted_expense": y_future_pred
+        })
+
+    # -----------------------------------------
+    # 7) Filter dan Kembalikan data
+    # -----------------------------------------
+    hist_in_range = hist_df[(hist_df["date"] >= startdate) & (hist_df["date"] <= enddate)]
+    pred_in_range = pred_df[(pred_df["date"] >= startdate) & (pred_df["date"] <= enddate)]
+    
+    return hist_in_range, pred_in_range
