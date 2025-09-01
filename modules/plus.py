@@ -4,19 +4,17 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QMainWindow
 
 class PlusSavingWindow(QMainWindow):
-    # Sinyal ini akan mengirimkan jumlah uang yang baru saja ditambahkan
+    # kirim jumlah uang yang baru ditambahkan ke dasbor
     savingsAdded = pyqtSignal(float)
 
     def __init__(self, widget):
         super(PlusSavingWindow, self).__init__()
-        # Pastikan file plus_saving.ui ada di folder ui_files
         uic.loadUi("ui_files/plus_saving.ui", self)
         
         self.widget = widget
         self.target_amount = 0
         self.current_savings = 0
 
-        # Hubungkan tombol
         self.saving_enter.clicked.connect(self.add_saving_amount)
         if hasattr(self, 'saving_back'):
             self.saving_back.clicked.connect(self.go_to_dashboard)
@@ -32,10 +30,9 @@ class PlusSavingWindow(QMainWindow):
         try:
             amount_to_add = float(self.saving_input.text())
             if amount_to_add > 0:
-                # Perbarui total tabungan sementara untuk ditampilkan di jendela ini
+                # Perbarui total tabungan sementara untuk ditampilkan
                 self.current_savings += amount_to_add
                 
-                # Kirim sinyal HANYA dengan jumlah yang baru ditambahkan
                 self.savingsAdded.emit(amount_to_add)
                 
                 # Perbarui tampilan di jendela ini
@@ -55,12 +52,10 @@ class PlusSavingWindow(QMainWindow):
             percentage = (self.current_savings / self.target_amount) * 100.0
             self.saving_bar.setValue(min(int(percentage), 100))
             self.saving_bar.setFormat(f'{percentage:.2f} %')
-            # GANTI FORMAT TEKS SESUAI PERMINTAAN
             keterangan_text = f"Anda telah menabung sebanyak Rp {self.current_savings:,.0f} dari target Rp {self.target_amount:,.0f}"
             self.saving_keterangan.setText(keterangan_text)
         else:
             self.saving_bar.setValue(0)
-            # Ganti teks jika target belum ada
             self.saving_keterangan.setText("Target belum ditentukan. Silakan atur via 'Edit Target'.")
 
     def go_to_dashboard(self):
