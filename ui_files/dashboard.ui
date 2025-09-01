@@ -555,7 +555,7 @@ font-weight: bold;
          <property name="frameShadow">
           <enum>QFrame::Raised</enum>
          </property>
-         <layout class="QVBoxLayout" name="verticalLayout_5" stretch="1,3,3,1,1,1,3">
+         <layout class="QVBoxLayout" name="verticalLayout_5" stretch="1,0,3,1,0,1,3">
           <item>
            <widget class="QLabel" name="label_11">
             <property name="sizePolicy">
@@ -578,18 +578,15 @@ font-weight: bold;</string>
            </widget>
           </item>
           <item>
-           <widget class="QLabel" name="monthlytarget">
+           <widget class="QProgressBar" name="targetsavings">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
-            <property name="styleSheet">
-             <string notr="true">background-color: rgb(170, 170, 255);</string>
-            </property>
-            <property name="text">
-             <string/>
+            <property name="value">
+             <number>24</number>
             </property>
            </widget>
           </item>
@@ -670,15 +667,18 @@ font-weight: bold;</string>
            </spacer>
           </item>
           <item>
-           <widget class="QProgressBar" name="targetsavings">
+           <widget class="QLabel" name="monthlytarget">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
-            <property name="value">
-             <number>24</number>
+            <property name="styleSheet">
+             <string notr="true">background-color: rgb(170, 170, 255);</string>
+            </property>
+            <property name="text">
+             <string/>
             </property>
            </widget>
           </item>
@@ -900,7 +900,7 @@ font-weight: bold;</string>
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>22</height>
+     <height>18</height>
     </rect>
    </property>
   </widget>

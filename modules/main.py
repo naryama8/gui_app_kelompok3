@@ -27,6 +27,14 @@ from prediction_ols import get_hist_and_pred_data
 import pandas as pd
 import matplotlib.dates as mdates
 
+# --- NEW CODE: IMPORT THE SAVING WINDOW ---
+from saving import SavingWindow
+# --- END OF NEW CODE ---
+
+# --- PENAMBAHAN KODE: IMPORT JENDELA PLUS SAVING ---
+from plus import PlusSavingWindow
+# --- AKHIR PENAMBAHAN KODE ---
+
 activeuser = None
 
 import resources_rc
@@ -42,6 +50,22 @@ def loadacc():
 def saveacc(accounts):
     with open("accounts.json", "w") as f:
         json.dump(accounts, f, indent=4)
+
+# --- PENAMBAHAN KODE: FUNGSI UNTUK MENGELOLA DATA TABUNGAN ---
+def load_savings():
+    """Memuat data tabungan dari file savings.json."""
+    if os.path.exists("savings.json"):
+        with open("savings.json", "r") as f:
+            return json.load(f)
+    else:
+        return {} # Mengembalikan dictionary kosong jika file tidak ada
+
+def save_savings(data):
+    """Menyimpan data tabungan ke file savings.json."""
+    with open("savings.json", "w") as f:
+        json.dump(data, f, indent=4)
+# --- AKHIR PENAMBAHAN KODE ---
+
 
 #functions buat animated background
 def _mix(a, b, t):
@@ -114,6 +138,9 @@ class Login(QMainWindow):
 
     def gotodashboard(self):
         widget.setCurrentIndex(2)
+        # --- PENAMBAHAN KODE: MUAT DATA TABUNGAN PENGGUNA SETELAH LOGIN ---
+        dashboard.load_user_data(activeuser)
+        # --- AKHIR PENAMBAHAN KODE ---
         dashboard.trendfunc()
 
 class Signup(QMainWindow):
@@ -158,6 +185,9 @@ class Signup(QMainWindow):
 
     def gotodashboard(self):
         widget.setCurrentIndex(2)
+        # --- PENAMBAHAN KODE: MUAT DATA TABUNGAN PENGGUNA SETELAH SIGNUP ---
+        dashboard.load_user_data(activeuser)
+        # --- AKHIR PENAMBAHAN KODE ---
         dashboard.trendfunc()
 
 class Dashboard(QMainWindow):
@@ -170,8 +200,21 @@ class Dashboard(QMainWindow):
         self.addtransaction.clicked.connect(self.addingtransaction)
         self.setpoint.clicked.connect(self.settingdate)
         self.showpiechart(self.piechart)
-        self.edittargetm.clicked.connect(self.edit_monthlytarget)
+        # --- NEW CODE: CONNECT 'edittargetm' BUTTON TO THE NEW FUNCTION ---
+        self.edittargetm.clicked.connect(self.goToSavingPage)
+        # --- END OF NEW CODE ---
         self.kalkutarget.clicked.connect(self.kalkuWindow)
+
+        # --- PENAMBAHAN KODE: FUNGSI UNTUK FITUR SAVINGS ---
+        # Variabel untuk menyimpan data target dan tabungan saat ini
+        self.monthly_target = 0.0
+        self.current_savings = 0.0
+        self.update_savings_display() # Melakukan setup awal tampilan
+
+        # Hubungkan tombol 'addsavings' dari file .ui ke fungsinya
+        # Pastikan nama objek di Qt Designer adalah 'addsavings'
+        self.addsavings.clicked.connect(self.goToPlusSavingPage)
+        # --- AKHIR PENAMBAHAN KODE ---
 
         #untuk label saldo: saldonum
         saldo = 150000
@@ -187,6 +230,30 @@ class Dashboard(QMainWindow):
         self.monthlyusagebar.setValue(int(monthlyusage))
         self.monthlyusagebar.setMaximum(100)
         self.monthlyusagebar.setMinimum(0)
+
+    # --- PENAMBAHAN KODE: METODE UNTUK MENGELOLA DATA PENGGUNA ---
+    def load_user_data(self, username):
+        """Memuat data tabungan untuk pengguna yang sedang login."""
+        print(f"Memuat data untuk pengguna: {username}")
+        all_savings = load_savings()
+        user_data = all_savings.get(username, {}) # Dapatkan data user, atau dict kosong jika user baru
+        self.monthly_target = user_data.get('target', 0.0)
+        self.current_savings = user_data.get('savings', 0.0)
+        self.update_savings_display()
+
+    def save_user_data(self):
+        """Menyimpan data tabungan pengguna saat ini ke file JSON."""
+        if not activeuser:
+            return # Jangan simpan jika tidak ada user yang aktif
+        
+        all_savings = load_savings()
+        all_savings[activeuser] = {
+            'target': self.monthly_target,
+            'savings': self.current_savings
+        }
+        save_savings(all_savings)
+        print(f"Data untuk pengguna {activeuser} telah disimpan.")
+    # --- AKHIR PENAMBAHAN KODE ---
 
     def trendfunc(self):
         try:
@@ -271,14 +338,24 @@ class Dashboard(QMainWindow):
     def edit_monthlytarget(self):
         text, ok = QInputDialog.getText(self, "Edit Target", "New Target: ")
         try:
-            if ok:
-                monthly_target = int(text)
-                self.monthly_target_label.setText(f"{monthly_target}")
+            if ok and text:
+                # Perbarui variabel state dan panggil fungsi update tampilan
+                self.monthly_target = float(text)
+                self.update_savings_display()
                 print("Target baru tersimpan")
-        except ValueError:
+                self.save_user_data() # Simpan data setelah diubah
+        except (ValueError, TypeError):
             QMessageBox.warning(self, "Error", "Masukkan angka yang valid!")
 
     def switchacc(self):
+        # --- PENAMBAHAN KODE: RESET DATA SAAT LOGOUT ---
+        global activeuser
+        print(f"Pengguna {activeuser} logout.")
+        activeuser = None
+        self.monthly_target = 0.0
+        self.current_savings = 0.0
+        self.update_savings_display()
+        # --- AKHIR PENAMBAHAN KODE ---
         widget.setCurrentIndex(0)
 
     def settingdate(self):
@@ -302,6 +379,65 @@ class Dashboard(QMainWindow):
     def kalkuWindow(self):
         print("Kalku Window")
         widget.setCurrentIndex(3)
+        
+    # --- NEW CODE: ADD A FUNCTION TO SWITCH TO THE SAVING PAGE ---
+    def goToSavingPage(self):
+        print("Going to Saving Page")
+        # --- PENAMBAHAN KODE: MENGIRIM DATA TERBARU KE SAVING PAGE ---
+        saving_page.set_current_state(self.monthly_target, self.current_savings)
+        # --- AKHIR PENAMBAHAN KODE ---
+        # The new saving page will be at index 4
+        widget.setCurrentIndex(4)
+    # --- END OF NEW CODE ---
+
+    # --- PENAMBAHAN KODE: METODE-METODE UNTUK FITUR ADD SAVINGS ---
+    def goToPlusSavingPage(self):
+        """Membuka halaman tambah tabungan dan mengirim data saat ini."""
+        plus_saving_page.set_initial_state(self.monthly_target, self.current_savings)
+        widget.setCurrentIndex(5) # Pindah ke halaman plus_saving (indeks ke-5)
+
+    def updateCurrentSavings(self, amount_added):
+        """Slot untuk menerima sinyal dari PlusSavingWindow dan memperbarui data."""
+        self.current_savings += amount_added
+        self.update_savings_display() # Perbarui tampilan di dasbor
+        self.save_user_data() # Simpan data setelah diubah
+
+    def update_savings_display(self):
+        """Memperbarui progress bar dan label tabungan di dasbor."""
+        # Pastikan nama progress bar di .ui adalah 'targetsavings'
+        if self.monthly_target > 0:
+            percentage = (self.current_savings / self.monthly_target) * 100
+            self.targetsavings.setValue(min(int(percentage), 100))
+        else:
+            self.targetsavings.setValue(0)
+        
+        # Pastikan nama QWidget oranye di .ui adalah 'namatarget'
+        if not hasattr(self, 'savings_label'):
+            layout = QVBoxLayout(self.namatarget)
+            layout.setContentsMargins(0,0,0,0)
+            self.savings_label = QLabel()
+            self.savings_label.setAlignment(QtCore.Qt.AlignCenter)
+            self.savings_label.setStyleSheet("font-size: 14px; color: white; background-color: transparent;")
+            layout.addWidget(self.savings_label)
+            self.namatarget.setLayout(layout)
+        
+        # --- PENAMBAHAN KODE: UBAH FORMAT TEKS TAMPILAN ---
+        if self.monthly_target > 0:
+            text = f"Anda telah menabung:\nRp {self.current_savings:,.0f}\ndari target Rp {self.monthly_target:,.0f}"
+        else:
+            text = "Target belum diatur"
+        self.savings_label.setText(text)
+        # --- AKHIR PENAMBAHAN KODE ---
+    # --- AKHIR PENAMBAHAN KODE ---
+    
+    # --- PENAMBAHAN KODE: SLOT UNTUK MENERIMA TARGET BARU DARI SAVING.PY ---
+    def updateMonthlyTarget(self, new_target):
+        """Slot untuk menerima sinyal dari SavingWindow dan memperbarui target."""
+        self.monthly_target = new_target
+        print(f"Target bulanan baru telah ditetapkan: Rp {self.monthly_target:,.0f}")
+        self.update_savings_display() # Perbarui tampilan di dasbor
+        self.save_user_data() # Simpan data setelah diubah
+    # --- AKHIR PENAMBAHAN KODE ---
 
 
 if __name__ == "__main__":
@@ -317,6 +453,23 @@ if __name__ == "__main__":
     widget.addWidget(dashboard)
     kalku=Kalku(widget)
     widget.addWidget(kalku)
+    
+    # --- NEW CODE: CREATE AND ADD THE SAVING WINDOW TO THE WIDGET STACK ---
+    saving_page = SavingWindow(widget)
+    widget.addWidget(saving_page)
+    # --- PENAMBAHAN KODE: HUBUNGKAN SINYAL DARI SAVING_PAGE KE DASHBOARD ---
+    saving_page.targetSet.connect(dashboard.updateMonthlyTarget)
+    # --- AKHIR PENAMBAHAN KODE ---
+    # --- END OF NEW CODE ---
+    
+    # --- PENAMBAHAN KODE: BUAT, TAMBAHKAN, DAN HUBUNGKAN JENDELA PLUS SAVING ---
+    plus_saving_page = PlusSavingWindow(widget)
+    widget.addWidget(plus_saving_page)
+    
+    # Hubungkan sinyal dari plus_saving_page ke slot di dasbor
+    plus_saving_page.savingsAdded.connect(dashboard.updateCurrentSavings)
+    # --- AKHIR PENAMBAHAN KODE ---
+
     widget.showMaximized()
 
     widget._bg_step = 0
