@@ -15,9 +15,6 @@ def get_hist_and_pred_data(username, startdate, enddate):
     dalam bentuk DataFrame. Tidak menampilkan grafik.
     """
     
-    # -----------------------------------------
-    # Config / file names
-    # -----------------------------------------
     DB_FILE = "transactions.db"
     INDEX_MAP_FILE = "index_map.json"
     
@@ -25,9 +22,6 @@ def get_hist_and_pred_data(username, startdate, enddate):
     startdate = pd.to_datetime(startdate)
     enddate = pd.to_datetime(enddate)
 
-    # -----------------------------------------
-    # 1) Baca data transaksi dari DB
-    # -----------------------------------------
     conn = sqlite3.connect(DB_FILE)
     df = pd.read_sql_query("SELECT username, type, amount, date FROM transactions", conn)
     conn.close()
@@ -42,9 +36,6 @@ def get_hist_and_pred_data(username, startdate, enddate):
         print("Tidak cukup data historis untuk prediksi.")
         return pd.DataFrame(), pd.DataFrame()
 
-    # -----------------------------------------
-    # 2) Persiapan Index Mapping yang Persist
-    # -----------------------------------------
     if os.path.exists(INDEX_MAP_FILE):
         with open(INDEX_MAP_FILE, "r") as f:
             idx_store = json.load(f)
@@ -78,15 +69,8 @@ def get_hist_and_pred_data(username, startdate, enddate):
     with open(INDEX_MAP_FILE, "w") as f:
         json.dump(to_save, f)
 
-    # -----------------------------------------
-    # 3) Siapkan data historis untuk model
-    # -----------------------------------------
     hist_df = df.copy().sort_values("date").reset_index(drop=True)
     hist_df["t_index"] = hist_df["date"].map(lambda d: date_to_index[pd.to_datetime(d)])
-
-    # -----------------------------------------
-    # 4) Fitur regresi
-    # -----------------------------------------
     def make_features_from_indices(t_indices):
         features = []
         for t in t_indices:
@@ -100,9 +84,6 @@ def get_hist_and_pred_data(username, startdate, enddate):
     model = sm.OLS(y_all, X_features_all)
     results = model.fit()
 
-    # -----------------------------------------
-    # 5) Aturan rekomendasi panjang prediksi
-    # -----------------------------------------
     n_learn_days = len(hist_df)
     if n_learn_days < 14: max_pred = 0
     elif n_learn_days < 21: max_pred = 3
@@ -113,9 +94,6 @@ def get_hist_and_pred_data(username, startdate, enddate):
 
     print(f"\nJumlah hari yang dipelajari: {n_learn_days}. Max prediksi direkomendasikan: {max_pred} hari.")
 
-    # -----------------------------------------
-    # 6) Siapkan daftar tanggal prediksi
-    # -----------------------------------------
     # Prediksi selalu dimulai sehari setelah data historis terakhir
     last_hist_date = hist_df["date"].max()
     future_startdate = last_hist_date + pd.Timedelta(days=1)
@@ -140,9 +118,6 @@ def get_hist_and_pred_data(username, startdate, enddate):
             "predicted_expense": y_future_pred
         })
 
-    # -----------------------------------------
-    # 7) Filter dan Kembalikan data
-    # -----------------------------------------
     hist_in_range = hist_df[(hist_df["date"] >= startdate) & (hist_df["date"] <= enddate)]
     pred_in_range = pred_df[(pred_df["date"] >= startdate) & (pred_df["date"] <= enddate)]
     
