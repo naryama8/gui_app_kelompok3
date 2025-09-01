@@ -7,6 +7,8 @@ from PyQt5.QtWidgets import QToolTip
 from PyQt5 import QtCore
 from PyQt5.QtCore import QTimer, QRegExp
 from transaction import TransactionApp
+import json
+from datetime import datetime, timezone
 
 class Kalku(QMainWindow):
     def __init__(self, widget, activeuser):
@@ -17,10 +19,10 @@ class Kalku(QMainWindow):
         self.saldo = 0
         self.calculateButton.clicked.connect(self.calculate)
         self.backButton.clicked.connect(self.backtoDashboard)
+        self.saveButton.clicked.connect(self.save)
         self.harga_barang.setValidator(QRegExpValidator(QRegExp("[0-9]*")))
         self.from_savings.setValidator(QRegExpValidator(QRegExp("[0-9]*")))
         self.target_perbulan.setValidator(QRegExpValidator(QRegExp("[0-9]*")))
-
 
     def display_balance(self):
         self.saldo = TransactionApp(self.activeuser).get_balance()
@@ -79,6 +81,32 @@ class Kalku(QMainWindow):
             self.target_hitung.setText("Sesuai Target Menabung: "+result_str)
             self.lower_target.setText("30% Di Bawah Target: "+lower_str)
             self.upper_target.setText("30% Di Atas Target: "+upper_str)
+
+    def save(self):
+
+        price = self.harga_barang.text()
+        savings_amount = self.from_savings.text()
+        monthly_savings = self.target_perbulan.text()
+
+        price = int(price)
+        savings_amount = int(savings_amount)
+        monthly_savings = int(monthly_savings)
+
+        result = int((price - savings_amount) / monthly_savings)
+        in_seconds = result * 30 * 24 * 60 * 60
+
+        date = datetime.now(timezone.utc).timestamp()
+        finish_date = date + in_seconds
+        with open('kalku.json') as json_file:
+            data = json.load(json_file)
+
+        data[self.activeuser] = [result, date, finish_date]
+        with open('kalku.json', 'w') as json_file:
+            json.dump(data, json_file)
+
+        self.backtoDashboard()
+
+
 
 
     def backtoDashboard(self):

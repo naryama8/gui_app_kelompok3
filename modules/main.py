@@ -18,7 +18,7 @@ from calc_window import Kalku
 from transaction import TransactionApp
 import sqlite3
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 import matplotlib.pyplot as plt
 from transaction import SetDate, TransactionApp
 import io
@@ -136,6 +136,7 @@ class Login(QMainWindow):
         # data masing masing user setelah login
         dashboard.load_user_data(activeuser)
         dashboard.trendfunc()
+        dashboard.update_estimation()
 
 class Signup(QMainWindow):
     def __init__(self):
@@ -182,6 +183,7 @@ class Signup(QMainWindow):
         # data tabungan masing masing user setelah login
         dashboard.load_user_data(activeuser)
         dashboard.trendfunc()
+        dashboard.update_estimation()
 
 
 class Dashboard(QMainWindow):
@@ -240,28 +242,28 @@ class Dashboard(QMainWindow):
         finally:
             if 'conn' in locals() and conn:
                 conn.close()
-        
+
         # Hitung dan perbarui monthly usage bar
         self.update_monthly_usage(balance)
-    
+
     def update_monthly_usage(self, current_balance):
         """Menghitung dan memperbarui progress bar Monthly Usage."""
         if not activeuser:
             self.monthlyusagebar.setValue(0)
             return
-        
+
         total_expense_this_month = 0
         try:
             conn = sqlite3.connect('transactions.db')
             cursor = conn.cursor()
             current_month = datetime.now().strftime("%Y-%m")
-            
+
             # Ambil total pengeluaran bulan ini
             cursor.execute("""
                 SELECT SUM(amount) FROM transactions 
                 WHERE username = ? AND type = 'Expense' AND strftime('%Y-%m', date) = ?
             """, (activeuser, current_month))
-            
+
             result = cursor.fetchone()[0]
             total_expense_this_month = abs(result) if result is not None else 0
 
@@ -396,7 +398,19 @@ class Dashboard(QMainWindow):
         kalku.activeuser = activeuser
         kalku.display_balance()
         widget.setCurrentIndex(3)
-        
+
+    def update_estimation(self):
+        time = datetime.now(timezone.utc).timestamp()
+        with open('kalku.json') as json_file:
+            data = json.load(json_file)
+
+        if activeuser in data:
+            array = data[activeuser]
+            seconds_left = array[2] - time
+            months_left = seconds_left / 2592000
+            self.estday.display(months_left)
+
+
     def goToSavingPage(self):
         saving_page.set_current_state(self.monthly_target, self.current_savings)
         widget.setCurrentIndex(4)
@@ -447,7 +461,7 @@ class Dashboard(QMainWindow):
         else:
             text = "Target belum diatur"
         self.savings_label.setText(text)
-    
+
     def updateMonthlyTarget(self, new_target):
         self.monthly_target = new_target
         self.update_savings_display()
@@ -458,9 +472,9 @@ class Dashboard(QMainWindow):
         if self.current_savings <= 0:
             QMessageBox.information(self, "Informasi", "Anda tidak memiliki tabungan untuk ditarik.")
             return
-        
+
         reply = QMessageBox.question(self, 'Konfirmasi', f'Anda yakin ingin menarik seluruh tabungan sebesar Rp {self.current_savings:,.0f}?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-        
+
         if reply == QMessageBox.Yes:
             self.perform_withdraw(self.current_savings)
 
@@ -505,11 +519,11 @@ if __name__ == "__main__":
     widget.addWidget(dashboard)
     kalku=Kalku(widget, activeuser)
     widget.addWidget(kalku)
-    
+
     saving_page = SavingWindow(widget)
     widget.addWidget(saving_page)
     saving_page.targetSet.connect(dashboard.updateMonthlyTarget)
-    
+
     plus_saving_page = PlusSavingWindow(widget)
     widget.addWidget(plus_saving_page)
     plus_saving_page.savingsAdded.connect(dashboard.updateCurrentSavings)

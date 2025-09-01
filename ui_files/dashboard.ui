@@ -890,7 +890,7 @@ color: rgb(104,96,152);
 font-weight: bold;</string>
             </property>
             <property name="text">
-             <string>Estimation Day</string>
+             <string>Estimation Months</string>
             </property>
            </widget>
           </item>
