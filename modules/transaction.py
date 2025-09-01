@@ -21,12 +21,10 @@ except ImportError:
 
 
 class TransactionApp(QMainWindow):
-    # --- PENAMBAHAN KODE: TERIMA PARAMETER BARU 'dashboard_reference' ---
     def __init__(self, activeuser, dashboard_reference=None):
         super().__init__()
         self.username=activeuser
         self.dashboard = dashboard_reference # Simpan referensi dasbor
-        # --- AKHIR PENAMBAHAN KODE ---
         try:
             uic.loadUi('ui_files/transaction.ui', self)
         except FileNotFoundError:
@@ -106,7 +104,6 @@ class TransactionApp(QMainWindow):
             # Dapatkan data transaksi yang akan dihapus
             transaction = self.transactions[index]
             
-            # Hapus dari database (dengan LIMIT untuk keamanan)
             self.cursor.execute(
                 "DELETE FROM transactions WHERE username=? AND date = ? AND amount = ? AND type = ? AND description = ? LIMIT 1",
                 (transaction["username"], transaction["date"], transaction["amount"], transaction["type"], transaction["description"])
@@ -189,10 +186,9 @@ class TransactionApp(QMainWindow):
                 # Tambahkan ke list (di awal untuk urutan DESC)
                 self.transactions.insert(0, transaction)
                 self.update_display()
-                # --- PENAMBAHAN KODE: REFRESH SALDO DI DASBOR ---
+                # refresh saldo
                 if self.dashboard:
                     self.dashboard.update_saldo_display()
-                # --- AKHIR PENAMBAHAN KODE ---
 
     def delete_selected_transaction(self, row):
         """Hapus transaksi yang dipilih"""
@@ -204,10 +200,8 @@ class TransactionApp(QMainWindow):
         if reply == QMessageBox.Yes:
             if self.delete_transaction(row):
                 self.update_display()
-                # --- PENAMBAHAN KODE: REFRESH SALDO DI DASBOR ---
                 if self.dashboard:
                     self.dashboard.update_saldo_display()
-                # --- AKHIR PENAMBAHAN KODE ---
                 QMessageBox.information(self, "Sukses", "Transaksi berhasil dihapus!")
             else:
                 QMessageBox.warning(self, "Error", "Gagal menghapus transaksi!")
@@ -428,10 +422,8 @@ class TransactionApp(QMainWindow):
         """Override close event untuk menutup koneksi database dan refresh dasbor"""
         if hasattr(self, 'conn'):
             self.conn.close()
-        # --- PENAMBAHAN KODE: REFRESH SALDO DI DASBOR SAAT JENDELA DITUTUP ---
         if self.dashboard:
             self.dashboard.update_saldo_display()
-        # --- AKHIR PENAMBAHAN KODE ---
         event.accept()
 
 class AddTransactionDialog(QtWidgets.QDialog):
