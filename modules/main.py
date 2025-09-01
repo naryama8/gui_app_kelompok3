@@ -389,14 +389,14 @@ class Dashboard(QMainWindow):
 
     def update_savings_display(self):
         """Memperbarui progress bar dan label tabungan di dasbor."""
-        # Pastikan nama progress bar di .ui adalah 'targetsavings'
         if self.monthly_target > 0:
             percentage = (self.current_savings / self.monthly_target) * 100
             self.targetsavings.setValue(min(int(percentage), 100))
+            self.targetsavings.setFormat(f'{percentage:.2f} %')
         else:
             self.targetsavings.setValue(0)
-        
-        # Pastikan nama QWidget oranye di .ui adalah 'namatarget'
+            self.targetsavings.setFormat('0.00 %')
+
         if not hasattr(self, 'savings_label'):
             layout = QVBoxLayout(self.namatarget)
             layout.setContentsMargins(0,0,0,0)

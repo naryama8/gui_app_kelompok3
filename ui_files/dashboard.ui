@@ -251,6 +251,21 @@ font-weight: bold;
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="styleSheet">
+             <string notr="true">QProgressBar {
+     border: 2px solid #6656be; /* Mengubah warna border di sini */
+    border-radius: 5px;
+    text-align: center; /* Teks persentase di tengah */
+    background-color: #f1f1f1; /* Warna latar belakang */
+	color: #6656be; /* Mengubah warna tulisan persentase di sini (hitam) */
+}
+
+QProgressBar::chunk {
+    background-color: #9a93c9; /* Warna bar yang berjalan */
+	background-color: rgb(154, 147, 201);
+    width: 10px; /* Membuat tampilan bar terlihat lebih tersegmentasi */
+}</string>
+            </property>
             <property name="value">
              <number>24</number>
             </property>
@@ -585,6 +600,20 @@ font-weight: bold;</string>
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="styleSheet">
+             <string notr="true">QProgressBar {
+     border: 2px solid #6656be; /* Mengubah warna border di sini */
+    border-radius: 5px;
+    text-align: center; /* Teks persentase di tengah */
+    background-color: #f1f1f1; /* Warna latar belakang */
+	color: #6656be; /* Mengubah warna tulisan persentase di sini (hitam) */
+}
+
+QProgressBar::chunk {
+    background-color: #9a93c9; /* Warna bar yang berjalan */
+    width: 10px; /* Membuat tampilan bar terlihat lebih tersegmentasi */
+}</string>
+            </property>
             <property name="value">
              <number>24</number>
             </property>
@@ -819,7 +848,7 @@ font-weight: bold;</string>
              </sizepolicy>
             </property>
             <property name="styleSheet">
-             <string notr="true">background-color: rgb(255, 170, 127);
+             <string notr="true">background-color: rgb(154, 147, 201);
 </string>
             </property>
            </widget>
